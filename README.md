@@ -113,4 +113,4 @@ async fn get_tasks(
 <br/>
 
 `NEW_TABLE_ENTITY` is made by `schema::new::/* TABLE_ENTITY_NAME */` .\
-method of name `_Method` is **not-returning-entity** verion of `Method` .
+Methods of name `_Method` are **not-returning-entity** verion of `Method` .
