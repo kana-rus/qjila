@@ -26,12 +26,23 @@ qjila::schema! {
     },
 
     // sub entity
+    type TaskData = {
+        id: Task.id,
+        title: Task.title,
+        description: Task.description,
+    },
+
+    // sub entity
     type UserData = {
+        id: User.id,
         name: User.name,
         password: User.password,
+        tasks: Vec<TaskData>,
     }
 }
 ```
+
+<br/>
 
 2. Execute migration by `qjila migrate` at the top of the project. `qjila` command will be installable by `cargo install qjila-cli`.
 
@@ -39,10 +50,12 @@ qjila::schema! {
 $ qjila migrate
 ```
 
-3. `qjila::schema!` will automatically generates ORM codes. Use them in the project.
+<br/>
+
+3. `qjila::schema!` will automatically generate ORM codes. Use them in the project.
 
 ```rust
-/* src/sample.rs */
+/* src/sample_1.rs */
 
 use qjila::Connection;
 use crate::schema::{User, newUser};
@@ -71,5 +84,23 @@ async fn signup(
         .await?;
     
     Ok(new_user)
+}
+```
+
+```rust
+/* src/sample_2.rs */
+
+use qjila::Connection;
+use crate::schema::{UserData, TaskData};
+
+async fn get_tasks(
+    conn: &Connection,
+    user_id: usize,
+) -> Result<Vec<TaskData>, MyError> {
+    let user_data = UserData::First(&conn)
+        .WHERE(|u| u.id.eq(&user_id))
+        .await?;
+    
+    Ok(user_data.tasks)
 }
 ```
