@@ -4,41 +4,25 @@
 
 # wokrking draft for **qjila** DB library
 
+## How to Use
 1. Define schema using `qjila::schema` macro. This will be editor-completable to some extent (by idea of **wrapping macro_rules**).
 
 ```rust
 /* src/schema.rs */
 
 qjila::schema! {
-    // table entity
     User {
         id: SERIAL as usize where PRIMARY_KEY,
         name:     VARCHAR(20) where NOT_NULL,
         password: VARCHAR(20) where NOT_NULL,
     },
 
-    // table entity
     Task {
         id: SERIAL as usize where PRIMARY_KEY,
         user_id:     REFERENCING(User.id),
         title:       VARCHAR(20) where NOT_NULL,
         description: TEXT,
     },
-
-    // sub entity
-    type TaskData = {
-        id: Task.id,
-        title: Task.title,
-        description: Task.description,
-    },
-
-    // sub entity
-    type UserData = {
-        id: User.id,
-        name: User.name,
-        password: User.password,
-        tasks: Vec<TaskData>,
-    }
 }
 ```
 
@@ -58,17 +42,17 @@ $ qjila migrate
 /* src/sample_1.rs */
 
 use qjila::Connection;
-use crate::schema::{User, newUser};
+use crate::schema::{new, User};
 
 async fn signup(
-    conn: &Connection,
+    c: &Connection,
     name: String,
     password: String,
 ) -> Result<User, crate::MyError> {
-    let n_existing = User::Count(&conn)
+    let n_existing = c.Count::<User>()
         .WHERE(|u| [
             u.name.eq(&name),
-            u.password.eq(&password),
+            u.passwod.eq(&password),
         ])
         .await?;
 
@@ -76,13 +60,13 @@ async fn signup(
         return Err(MyError::ExistingUser)
     }
 
-    let new_user = User::Create(&conn)
-        .ONE(newUser{
+    let new_user = c.Create(
+        new::User{
             name,
             password,
-        })
-        .await?;
-    
+        }
+    ).await?;
+
     Ok(new_user)
 }
 ```
@@ -91,16 +75,42 @@ async fn signup(
 /* src/sample_2.rs */
 
 use qjila::Connection;
-use crate::schema::{UserData, TaskData};
+use crate::schema::Task;
 
 async fn get_tasks(
     conn: &Connection,
     user_id: usize,
-) -> Result<Vec<TaskData>, MyError> {
-    let user_data = UserData::First(&conn)
-        .WHERE(|u| u.id.eq(&user_id))
-        .await?;
-    
-    Ok(user_data.tasks)
+) -> Result<Vec<Task>, MyError> {
+    conn.All()
+        .WHERE(|task|
+            task.user_id.eq(&user_id)
+        )
+        .ORDER_ASC(|task| task.user_id)
+        .ORDER_ASC(|task| task.title)
+        .await.map_err(|e| e.into())
 }
 ```
+
+<br/>
+<br/>
+
+## Available Operations
+- `qjila::Connection::`
+  - `Create( NEW_TABLE_ENTITY { /* */ })`
+  - `_Create( NEW_TABLE_ENTITY { /* */ })`
+    - `await` ( calling `IntoFuture` )
+- `qjila::Connection::`
+  - `First::<TABLE_ENTITY>()`
+  - `All::<TABLE_ENTITY>()`
+  - `Update::<TABLE_ENTITY>()`
+  - `_Update::<TABLE_ENTITY>()`
+  - `Delete::<TABLE_ENTITY>()`
+  - `_Delete::<TABLE_ENTITY>()`
+  - `Count::<TABLE_ENTITY>()`
+    - `/* conditions */`
+      - `await` ( calling `IntoFuture` )
+
+<br/>
+
+`NEW_TABLE_ENTITY` is made by `schema::new::/* TABLE_ENTITY_NAME */` .\
+method of name `_Method` is **not-returning-entity** verion of `Method` .
