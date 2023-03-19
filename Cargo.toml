@@ -9,9 +9,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-deadpool-postgres = { verion = "0.10", default_features = false }
+deadpool-postgres = { verion = "0.10", default_features = false, optional = true }
 
 [features]
-default = ["runtime_tokio"]
-runtime_tokio = ["deadpool-postgres/rt_tokio_1"]
-runtime_async-std = ["deadpool-postgres/rt_async-std_1"]
+default = ["db_postgres", "runtime_tokio"]
+db_postgres = ["dep:deadpool-postgres"]
+runtime_tokio = ["deadpool-postgres?/rt_tokio_1"]
+runtime_async-std = ["deadpool-postgres?/rt_async-std_1"]
