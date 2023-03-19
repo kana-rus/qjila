@@ -42,7 +42,7 @@ $ qjila migrate
 /* src/sample_1.rs */
 
 use qjila::Connection;
-use crate::schema::{new, User};
+use crate::schema::{User, newUser};
 
 async fn signup(
     c: &Connection,
@@ -61,7 +61,7 @@ async fn signup(
     }
 
     let new_user = c.Create(
-        new::User{
+        newUser{
             name,
             password,
         }
@@ -112,5 +112,4 @@ async fn get_tasks(
 
 <br/>
 
-`NEW_TABLE_ENTITY` is made by `schema::new::/* TABLE_ENTITY_NAME */` .\
 Methods of name `_Method` are **not-returning-entity** verion of `Method` .
