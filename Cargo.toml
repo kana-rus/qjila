@@ -4,7 +4,7 @@ members = [
 ]
 
 [package]
-name = "qjila"
+name = "qujila"
 version = "0.1.0"
 edition = "2021"
 
@@ -13,6 +13,7 @@ deadpool-postgres = { verion = "0.10", default_features = false, optional = true
 
 [features]
 default = ["db_postgres", "runtime_tokio"]
+
 db_postgres = ["dep:deadpool-postgres"]
 runtime_tokio = ["deadpool-postgres?/rt_tokio_1"]
 runtime_async-std = ["deadpool-postgres?/rt_async-std_1"]

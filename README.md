@@ -1,25 +1,25 @@
 <div align="center">
-    <h1>qjila</h1>
+    <h1>qujila</h1>
 </div>
 
-# wokrking draft for **qjila** DB library
+# wokrking draft for **qujila** DB library
 
 ## How to Use
-1. Define schema using `qjila::schema` macro. This will be editor-completable to some extent (by idea of **wrapping macro_rules**).
+1. Define schema in `src/schema.rs` using `qujila::schema!` macro. This will be editor-completable to some extent (by idea of **wrapping macro_rules**).
 
 ```rust
 /* src/schema.rs */
 
-qjila::schema! {
+qujila::schema! {
     User {
-        id: SERIAL as usize where PRIMARY_KEY,
+        id:       SERIAL where PRIMARY_KEY,
         name:     VARCHAR(20) where NOT_NULL,
         password: VARCHAR(20) where NOT_NULL,
     },
 
     Task {
-        id: SERIAL as usize where PRIMARY_KEY,
-        user_id:     REFERENCING(User.id),
+        id:          SERIAL where PRIMARY_KEY,
+        user_id:     REFERENCING(User::id),
         title:       VARCHAR(20) where NOT_NULL,
         description: TEXT,
     },
@@ -28,20 +28,20 @@ qjila::schema! {
 
 <br/>
 
-2. Execute migration by `qjila migrate` at the top of the project. `qjila` command will be installable by `cargo install qjila-cli`.
+2. Execute migration by `qujila sync` at the top of the project. `qujila` command will be installable by `cargo install qujila-cli`.
 
 ```sh
-$ qjila migrate
+$ qujila sync ${DB_URL}
 ```
 
 <br/>
 
-3. `qjila::schema!` will automatically generate ORM codes. Use them in the project.
+3. `qujila::schema!` will automatically generate ORM codes. Use them in the project.
 
 ```rust
 /* src/sample_1.rs */
 
-use qjila::Connection;
+use qujila::Connection;
 use crate::schema::{User, newUser};
 
 async fn signup(
@@ -74,14 +74,14 @@ async fn signup(
 ```rust
 /* src/sample_2.rs */
 
-use qjila::Connection;
+use qujila::Connection;
 use crate::schema::Task;
 
 async fn get_tasks(
     conn: &Connection,
     user_id: usize,
 ) -> Result<Vec<Task>, MyError> {
-    conn.All()
+    conn.All::<Task>()
         .WHERE(|task|
             task.user_id.eq(&user_id)
         )
@@ -95,11 +95,11 @@ async fn get_tasks(
 <br/>
 
 ## Available Operations
-- `qjila::Connection::`
+- `qujila::Connection::`
   - `Create( NEW_TABLE_ENTITY { /* */ })`
   - `_Create( NEW_TABLE_ENTITY { /* */ })`
     - `await` ( calling `IntoFuture` )
-- `qjila::Connection::`
+- `qujila::Connection::`
   - `First::<TABLE_ENTITY>()`
   - `All::<TABLE_ENTITY>()`
   - `Update::<TABLE_ENTITY>()`
