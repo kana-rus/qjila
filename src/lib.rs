@@ -3,5 +3,7 @@
 mod pool;
 mod error;
 mod entity;
+mod db_type;
+mod condition;
 mod operation;
 mod connection;

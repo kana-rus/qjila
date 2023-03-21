@@ -2,6 +2,7 @@ mod from_row;
 
 pub use self::from_row::FromRow;
 
+
 pub trait newEntity {
     type Entity: Entity;
 
@@ -13,4 +14,7 @@ pub trait newEntity {
 
 pub trait Entity: for<'r> FromRow<'r> + Sized {
     const TABLE_NAME: &'static str;
+
+    type ConditionBuilder;
+    type ColumnSelector;
 }
