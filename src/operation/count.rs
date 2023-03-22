@@ -1,20 +1,18 @@
-use std::{marker::PhantomData, future::IntoFuture};
+use std::{marker::PhantomData, future::{IntoFuture, Future}, pin::Pin};
 use crate::{
     condition as cond,
+    connection::Connection,
     entity::{Entity, BuildCondition},
 };
 
 
 pub struct Count<E: Entity>{
     _entity: PhantomData<fn()->E>,
+    connection: Connection,
     condition: cond::Condition,
 }
 
 impl<E: Entity> Count<E> {
-    pub fn new() -> Self {
-        Self { _entity: PhantomData, condition: cond::Condition::new() }
-    }
-
     pub fn WHERE<C: Into<cond::Condition>, F: Fn(E::ConditionBuilder)->C>(mut self, condition: F) -> Self {
         self.condition = condition(E::ConditionBuilder::new()).into();
         self
@@ -22,16 +20,31 @@ impl<E: Entity> Count<E> {
 }
 const _: (/* Count impls */) = {
     impl<E: Entity> IntoFuture for Count<E> {
-        type IntoFuture = ;
+        type Output = Result<usize, crate::error::Error>;
+        type IntoFuture = Pin<Box<dyn Future<Output = Self::Output>>>;
         fn into_future(self) -> Self::IntoFuture {
-            
+            Box::pin(async move {
+                let client = &self.connection.0;
+                let stmt = client
+                    .prepare_cached(&format!(
+                        "SELECT COUNT(*) FROM {}",
+                        E::TABLE_NAME,
+                    ))
+                    .await?;
+                let row = client
+                    .query_one(&stmt, &[])
+                    .await?;
+                Ok(row.get::<_, i64>(0) as usize)
+            })
         }
     }
 };
 
 
 #[cfg(test)]
-fn __example__() {
+fn __example__(connection: Connection) {
+    use crate::{condition::Condition, entity::CreateEntity};
+
     struct User {
         id: usize,
         name: String,
@@ -58,19 +71,26 @@ fn __example__() {
         struct UserColumns {
             id: UserColumn,
             name: UserColumn,
-        }
-        impl crate::entity::SelectColumn for UserColumns {
+        } impl crate::entity::SelectColumn for UserColumns {
 
+        }
+
+        struct CreateUser {
+            name: String,
+        } impl CreateEntity for CreateUser {
+            const NON_DEFAULT_COLUMN_NAMES: &'static str = "name";
+            type NonDefaultColumnTypes = String;
         }
 
         impl Entity for User {
             const TABLE_NAME: &'static str = "users";
+            type Creator = CreateUser;
             type ConditionBuilder = UserCondition;
             type ColumnSelector = UserColumns;
         }
     };
 
-    let _ = Count::<User>::new()
+    let _ = Count::<User> {_entity:PhantomData, condition:Condition::new(), connection}
         .WHERE(|u| [
             u.id.between(100, 1000),
             u.name.like("%user%"),
