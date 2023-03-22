@@ -1,5 +1,4 @@
 mod from_row;
-
 pub use self::from_row::FromRow;
 
 
@@ -15,6 +14,14 @@ pub trait newEntity {
 pub trait Entity: for<'r> FromRow<'r> + Sized {
     const TABLE_NAME: &'static str;
 
-    type ConditionBuilder;
-    type ColumnSelector;
+    type ConditionBuilder: BuildCondition;
+    type ColumnSelector: SelectColumn;
+}
+
+pub trait BuildCondition: Sized {
+    fn new() -> Self;
+}
+
+pub trait SelectColumn {
+
 }

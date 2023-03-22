@@ -1,13 +1,13 @@
-use std::marker::PhantomData;
+mod create;
+mod first;
+mod all;
+mod update;
+mod delete;
+mod count;
 
-use crate::{entity::Entity, condition::Condition};
 
 
-pub struct Count<E: Entity>{
-    condition: Condition,
-    _entity: PhantomData<fn()->E>,
-}
 
-pub struct First<E: Entity> {
-    _entity: PhantomData<fn()->E>,
-}
+
+
+
