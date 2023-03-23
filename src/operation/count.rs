@@ -1,12 +1,14 @@
 use std::{
+    task::Poll,
+    pin::{Pin, pin},
     marker::PhantomData,
     future::{IntoFuture, Future},
-    pin::{Pin, pin}, task::Poll,
 };
 use crate::{
+    error::Error,
     condition as cond,
     connection::Connection,
-    entity::{Entity, BuildCondition}, error::Error,
+    entity::{Entity, BuildCondition},
 };
 
 
@@ -48,13 +50,11 @@ const _: (/* Count impls */) = {
             match pin!(client.prepare_cached(&self.sql)).poll(cx) {
                 Poll::Pending         => return Poll::Pending,
                 Poll::Ready(Err(e))   => return Poll::Ready(Err(e.into())),
-                Poll::Ready(Ok(stmt)) => {cx.waker().wake_by_ref();
-                    match pin!(client.query_one(&stmt, &[])).poll(cx) {
-                        Poll::Pending        => Poll::Pending,
-                        Poll::Ready(Err(e))  => Poll::Ready(Err(e.into())),
-                        Poll::Ready(Ok(row)) => Poll::Ready(Ok(row.get::<_, i64>(0) as usize)),
-                    }
-                },
+                Poll::Ready(Ok(stmt)) => match pin!(client.query_one(&stmt, &[])).poll(cx) {
+                    Poll::Pending        => Poll::Pending,
+                    Poll::Ready(Err(e))  => Poll::Ready(Err(e.into())),
+                    Poll::Ready(Ok(row)) => Poll::Ready(Ok(row.get::<_, i64>(0) as usize)),
+                }
             }
         }
     }
@@ -62,7 +62,7 @@ const _: (/* Count impls */) = {
 
 
 #[cfg(test)] #[allow(unused)]
-async fn __example__(connection: Connection) {
+async fn __example__(connection: Connection) -> Result<(), Error> {
     use crate::{condition::Condition, entity::CreateEntity};
 
     struct User {
@@ -110,10 +110,12 @@ async fn __example__(connection: Connection) {
         }
     };
 
-    let _ = Count::<User> {_entity:PhantomData, condition:Condition::new(), connection}
+    let count: usize = Count::<User> {_entity:PhantomData, condition:Condition::new(), connection}
         .WHERE(|u| [
             u.id.between(100, 1000),
             u.name.like("%user%"),
         ])
-        ;
+        .await?;
+
+    Ok(())
 }
