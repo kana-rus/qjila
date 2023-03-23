@@ -1,8 +1,12 @@
-use std::{marker::PhantomData, future::{IntoFuture, Future}, pin::Pin};
+use std::{
+    marker::PhantomData,
+    future::{IntoFuture, Future},
+    pin::{Pin, pin}, task::Poll,
+};
 use crate::{
     condition as cond,
     connection::Connection,
-    entity::{Entity, BuildCondition},
+    entity::{Entity, BuildCondition}, error::Error,
 };
 
 
@@ -19,30 +23,57 @@ impl<E: Entity> Count<E> {
     }
 }
 const _: (/* Count impls */) = {
+    // impl<E: Entity> IntoFuture for Count<E> {
+    //     type Output = Result<usize, crate::error::Error>;
+    //     type IntoFuture = Pin<Box<dyn Future<Output = Self::Output>>>;
+    //     fn into_future(self) -> Self::IntoFuture {
+    //         Box::pin(async move {
+    //             let client = &self.connection.0;
+    //             let stmt = client
+    //                 .prepare_cached(&format!(
+    //                     "SELECT COUNT(*) FROM {}",
+    //                     E::TABLE_NAME,
+    //                 ))
+    //                 .await?;
+    //             let row = client
+    //                 .query_one(&stmt, &[])
+    //                 .await?;
+    //             Ok(row.get::<_, i64>(0) as usize)
+    //         })
+    //     }
+    // }
+
     impl<E: Entity> IntoFuture for Count<E> {
-        type Output = Result<usize, crate::error::Error>;
-        type IntoFuture = Pin<Box<dyn Future<Output = Self::Output>>>;
+        type Output = Result<usize, Error>;
+        type IntoFuture = CountResult;
         fn into_future(self) -> Self::IntoFuture {
-            Box::pin(async move {
-                let client = &self.connection.0;
-                let stmt = client
-                    .prepare_cached(&format!(
-                        "SELECT COUNT(*) FROM {}",
-                        E::TABLE_NAME,
-                    ))
-                    .await?;
-                let row = client
-                    .query_one(&stmt, &[])
-                    .await?;
-                Ok(row.get::<_, i64>(0) as usize)
-            })
+            CountResult {
+                connection: self.connection,
+                sql: format!(
+                    "SELECT COUNT(*) FROM {} {}",
+                    E::TABLE_NAME,
+                    self.condition,
+                ),
+            }
+        }
+    }
+
+    pub struct CountResult {
+        connection: Connection,
+        sql:        String,
+    } impl Future for CountResult {
+        type Output = Result<usize, Error>;
+        fn poll(self: Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
+            
+
+            todo!()
         }
     }
 };
 
 
-#[cfg(test)]
-fn __example__(connection: Connection) {
+#[cfg(test)] #[allow(unused)]
+async fn __example__(connection: Connection) {
     use crate::{condition::Condition, entity::CreateEntity};
 
     struct User {
@@ -94,5 +125,6 @@ fn __example__(connection: Connection) {
         .WHERE(|u| [
             u.id.between(100, 1000),
             u.name.like("%user%"),
-        ]);
+        ])
+        ;
 }
