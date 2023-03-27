@@ -5,8 +5,15 @@
 
 mod pool;
 mod error;
+mod query;
 mod entity;
 mod db_type;
 mod condition;
-mod operation;
 mod connection;
+
+
+pub(crate) mod internal_macros {
+    pub(crate) use qujila_macros::{
+        __internal__into_query,
+    };
+}
