@@ -10,28 +10,26 @@ use std::{marker::PhantomData, future::{Future, IntoFuture}, pin::{Pin, pin}, ta
 use crate::{connection::Connection, entity::FromRow, error::Error};
 
 
-pub struct QueryOne<const N_PARAMS: usize, As: for<'r> FromRow<'r>> {
+pub struct QueryOne<As: for<'r> FromRow<'r>, const N_PARAMS: usize> {
     __as__:     PhantomData<fn()->As>,
     connection: Connection,
     statement:  String,
     params:     [String; N_PARAMS],
 } const _: (/* Query impls */) = {
-    impl<const N_PARAMS: usize, As: for<'r> FromRow<'r>> Future for QueryOne<N_PARAMS, As> {
+    impl<As: for<'r> FromRow<'r>, const N_PARAMS: usize> Future for QueryOne<As, N_PARAMS> {
         type Output = Result<As, Error>;
         fn poll(self: Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
-            let params: &[&String] = &self.params.each_ref();
-            let params: &[&(dyn ToSql + Sync)] = &[];//params as &[&(dyn ToSql + Sync)];
+            let mut iter = self.params.iter().map(|s| s as &(dyn ToSql + Sync));
+            let params: [_; N_PARAMS] = std::array::from_fn(move |_| unsafe {iter.next().unwrap_unchecked()});
 
             let client = &self.connection.0;
             match pin!(client.prepare_cached(&self.statement)).poll(cx) {
                 Poll::Pending         => return Poll::Pending,
                 Poll::Ready(Err(e))   => return Poll::Ready(Err(e.into())),
-                Poll::Ready(Ok(stmt)) => {
-                    match pin!(client.query_one(&stmt, params)).poll(cx) {
-                        Poll::Pending        => Poll::Pending,
-                        Poll::Ready(Err(e))  => Poll::Ready(Err(e.into())),
-                        Poll::Ready(Ok(row)) => Poll::Ready(Ok(As::from_row(&row))),
-                    }
+                Poll::Ready(Ok(stmt)) => match pin!(client.query_one(&stmt, &params)).poll(cx) {
+                    Poll::Pending        => Poll::Pending,
+                    Poll::Ready(Err(e))  => Poll::Ready(Err(e.into())),
+                    Poll::Ready(Ok(row)) => Poll::Ready(Ok(As::from_row(&row))),
                 }
             }
         }
@@ -39,7 +37,7 @@ pub struct QueryOne<const N_PARAMS: usize, As: for<'r> FromRow<'r>> {
 };
 
 
-#[cfg(test)]
+#[cfg(test)] #[allow(unused)]
 fn __assert_impls__() {
     fn ToSql_Sync<T: ToSql + Sync>() {}
     ToSql_Sync::<String>();
@@ -60,43 +58,21 @@ fn __assert_impls__() {
 
 }
 
-#[cfg(test)]
-fn string_array_each_ref<const N: usize>(array: &[String; N]) -> [&String; N] {
-    
+#[cfg(test)] #[allow(unused)]
+mod experement {
+    use deadpool_postgres::tokio_postgres::types::ToSql;
 
-    // std::array::fr
-    todo!()
-}
-/*
+    fn f<const N: usize>(ref_array: &[String; N]) {
+        let mut iter = ref_array
+            .iter()
+            .map(|s: &String| s as &(dyn ToSql + Sync));
 
-#[unstable(feature = "array_methods", issue = "76118")]
-pub fn each_ref(&self) -> [&T; N] {
-    from_trusted_iterator(self.iter())
-}
+        let new: [&(dyn ToSql + Sync); N] = std::array::from_fn(
+            move |_| unsafe {
+                iter.next().unwrap_unchecked()
+            }
+        );
 
-#[inline]
-fn from_trusted_iterator<T, const N: usize>(iter: impl UncheckedIterator<Item = T>) -> [T; N] {
-    try_from_trusted_iterator(iter.map(NeverShortCircuit)).0
-}
-
-#[inline]
-fn try_from_trusted_iterator<T, R, const N: usize>(
-    iter: impl UncheckedIterator<Item = R>,
-) -> ChangeOutputType<R, [T; N]>
-where
-    R: Try<Output = T>,
-    R::Residual: Residual<[T; N]>,
-{
-    assert!(iter.size_hint().0 >= N);
-    fn next<T>(mut iter: impl UncheckedIterator<Item = T>) -> impl FnMut(usize) -> T {
-        move |_| {
-            // SAFETY: We know that `from_fn` will call this at most N times,
-            // and we checked to ensure that we have at least that many items.
-            unsafe { iter.next_unchecked() }
-        }
+        let _: &[&(dyn ToSql + Sync)] = &new;
     }
-
-    try_from_fn(next(iter))
 }
-
-*/

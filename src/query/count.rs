@@ -25,7 +25,7 @@ impl<E: Entity> Count<E> {
 const _: (/* Count impls */) = {
     impl<E: Entity> IntoFuture for Count<E> {
         type Output = Result<usize, Error>;
-        type IntoFuture = super::QueryOne<0, usize>;
+        type IntoFuture = super::QueryOne<usize, 0>;
         fn into_future(self) -> Self::IntoFuture {
             super::QueryOne {
                 __as__:     PhantomData,

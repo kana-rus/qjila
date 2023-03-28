@@ -33,7 +33,7 @@ impl<E: Entity> First<E> {
 const _: (/* First impls */) = {
     impl<E: Entity> IntoFuture for First<E> {
         type Output = Result<E, Error>;
-        type IntoFuture = super::QueryOne<0, E>;
+        type IntoFuture = super::QueryOne<E, 0>;
         fn into_future(self) -> Self::IntoFuture {
             super::QueryOne {__as__: PhantomData,
                 connection: self.connection,
