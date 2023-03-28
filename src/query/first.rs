@@ -9,26 +9,24 @@ pub struct First<E: Entity> {
     _entity: PhantomData<fn()->E>,
     connection: Connection,
     condition:  cond::Condition,
-    limit: cond::Limit,
-    order: cond::Order,
 }
 impl<E: Entity> First<E> {
     #[inline] pub fn WHERE<C: Into<cond::Condition>, F: Fn(E::ConditionBuilder)->C>(mut self, condition: F) -> Self {
         self.condition = condition(E::ConditionBuilder::new()).into();
         self
     }
-    #[inline] pub fn ORDER_ASC<const COLUMN: &'static str, F: Fn(E::ColumnSelector)->Column<COLUMN>>(mut self, column: F) -> Self {
-        self.order.ASC(COLUMN);
-        self
-    }
-    #[inline] pub fn ORDER_DESC<const COLUMN: &'static str, F: Fn(E::ColumnSelector)->Column<COLUMN>>(mut self, column: F) -> Self {
-        self.order.DESC(COLUMN);
-        self
-    }
-    #[inline] pub fn LIMIT(mut self, limit: usize) -> Self {
-        self.limit.set(limit);
-        self
-    }
+    // #[inline] pub fn ORDER_ASC<const COLUMN: &'static str, F: Fn(E::ColumnSelector)->Column<COLUMN>>(mut self, column: F) -> Self {
+    //     self.order.ASC(COLUMN);
+    //     self
+    // }
+    // #[inline] pub fn ORDER_DESC<const COLUMN: &'static str, F: Fn(E::ColumnSelector)->Column<COLUMN>>(mut self, column: F) -> Self {
+    //     self.order.DESC(COLUMN);
+    //     self
+    // }
+    // #[inline] pub fn LIMIT(mut self, limit: usize) -> Self {
+    //     self.limit.set(limit);
+    //     self
+    // }
 }
 const _: (/* First impls */) = {
     impl<E: Entity> IntoFuture for First<E> {
@@ -37,7 +35,7 @@ const _: (/* First impls */) = {
         fn into_future(self) -> Self::IntoFuture {
             super::QueryOne {__as__: PhantomData,
                 connection: self.connection,
-                statement:  format!("SELE"),
+                statement:  format!("SELECT * FROM {} {} LIMIT 1", E::TABLE_NAME, self.condition),
                 params:     []
             }
         }
