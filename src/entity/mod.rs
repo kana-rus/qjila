@@ -20,5 +20,6 @@ pub trait BuildCondition: Sized {
 }
 
 pub trait SelectColumn {
-
+    fn new() -> Self;
 }
+pub struct Column<const NAME: &'static str>;

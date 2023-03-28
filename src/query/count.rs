@@ -4,7 +4,6 @@ use std::{
 };
 use crate::{
     error::Error,
-    query::Query,
     condition as cond,
     connection::Connection,
     entity::{Entity, BuildCondition},
@@ -24,30 +23,19 @@ impl<E: Entity> Count<E> {
     }
 }
 const _: (/* Count impls */) = {
-    // impl<'params, 'tosql, E: Entity> IntoFuture for Count<E> {
-    //     type Output = Result<usize, Error>;
-    //     type IntoFuture = Query<'params, 'tosql, usize>;
-    //     fn into_future(self) -> Self::IntoFuture {
-    //         Query {_as: PhantomData, connection: self.connection,
-    //             sql: format!(
-    //                 "SELECT COUNT(*) FROM {} {}",
-    //                 E::TABLE_NAME,
-    //                 self.condition,
-    //             ),
-    //         }
-    //     }
-    // }
-
+    impl<E: Entity> IntoFuture for Count<E> {
+        type Output = Result<usize, Error>;
+        type IntoFuture = super::QueryOne<0, usize>;
+        fn into_future(self) -> Self::IntoFuture {
+            super::QueryOne {
+                __as__:     PhantomData,
+                connection: self.connection,
+                statement:  format!("SELECT COUNT(*) FROM {} {}", E::TABLE_NAME, self.condition),
+                params:     [],
+            }
+        }
+    }
 };
-
-super::into_query!(Count: E => usize:
-    format!("SELECT COUNT(*) FROM {} {}",
-        E::TABLE_NAME,
-        self.condition,
-    ),
-    []
-);
-
 
 
 #[cfg(test)] #[allow(unused)]
@@ -81,7 +69,9 @@ async fn __example__(connection: Connection) -> Result<(), Error> {
             id: UserColumn,
             name: UserColumn,
         } impl crate::entity::SelectColumn for UserColumns {
-
+            fn new() -> Self {
+                Self { id: UserColumn::id, name: UserColumn::name }
+            }
         }
 
         struct CreateUser {

@@ -1,3 +1,5 @@
+#![feature(array_methods)]
+
 #![allow(incomplete_features)]
 #![feature(adt_const_params)]
 
