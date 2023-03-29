@@ -1,21 +1,28 @@
-#![feature(array_methods)]
+#![feature(
+    array_methods,
+    const_ops, const_trait_impl, const_slice_index
+)]
 
-#![allow(incomplete_features)]
-#![feature(adt_const_params)]
+#![allow(incomplete_features)] #![feature(
+    adt_const_params
+)]
 
-#![allow(non_snake_case, non_camel_case_types)]
+#![allow(
+    non_snake_case, non_camel_case_types
+)]
 
 mod error;
 mod query;
-mod qujila;
+pub mod qujila;
 mod entity;
 mod db_type;
 mod condition;
 mod connection;
-
 
 pub(crate) mod internal_macros {
     pub(crate) use qujila_macros::{
         __internal__into_query,
     };
 }
+
+pub use qujila::Qujila;
