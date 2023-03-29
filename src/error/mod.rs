@@ -1,6 +1,8 @@
 use deadpool_postgres::PoolError;
 use deadpool_postgres::tokio_postgres::Error as TokioPostgresError;
 
+
+#[derive(Debug)]
 pub enum Error {
     ConfigError(String),
     DBError(String),

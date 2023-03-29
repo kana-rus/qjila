@@ -12,6 +12,7 @@ edition = "2021"
 [dependencies]
 qujila_macros = { verion = "0.1.0", path = "./macros" }
 deadpool-postgres = { verion = "0.10", default_features = false, optional = true }
+fxhash = "0.2"
 
 [features]
 default = ["db_postgres", "runtime_tokio"]
