@@ -13,11 +13,11 @@ use crate::{
 pub struct Count<E: Entity>{
     _entity: PhantomData<fn()->E>,
     connection: Connection,
-    condition: cond::Condition,
+    condition:  cond::Condition,
 }
 
 impl<E: Entity> Count<E> {
-    pub fn WHERE<C: Into<cond::Condition>, F: Fn(E::ConditionBuilder)->C>(mut self, condition: F) -> Self {
+    #[inline] pub fn WHERE<C: Into<cond::Condition>, F: Fn(E::ConditionBuilder)->C>(mut self, condition: F) -> Self {
         self.condition = condition(E::ConditionBuilder::new()).into();
         self
     }

@@ -1,4 +1,3 @@
-use std::{hash::Hasher, ops::BitXor};
 use crate::{connection::Connection, error::Error};
 
 
@@ -22,8 +21,8 @@ macro_rules! cached {
     };
 }
 
-//#[cfg(test)]
-#[allow(unused)] mod __sample__ {mod qujila {pub use crate::*;}
+#[cfg(test)] #[allow(unused)]
+mod __sample__ {mod qujila {pub use crate::*;}
     use qujila::cached;
     async fn __sample__(q: &qujila::Qujila) {
         let cached_qujila = cached!(q);

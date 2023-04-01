@@ -15,7 +15,7 @@ pub struct QueryOne<As: for<'r> FromRow<'r>, const N_PARAMS: usize> {
     connection: Connection,
     statement:  String,
     params:     [String; N_PARAMS],
-} const _: (/* Query impls */) = {
+} const _: (/* QueryOne impls */) = {
     impl<As: for<'r> FromRow<'r>, const N_PARAMS: usize> Future for QueryOne<As, N_PARAMS> {
         type Output = Result<As, Error>;
         fn poll(self: Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
@@ -30,6 +30,36 @@ pub struct QueryOne<As: for<'r> FromRow<'r>, const N_PARAMS: usize> {
                     Poll::Pending        => Poll::Pending,
                     Poll::Ready(Err(e))  => Poll::Ready(Err(e.into())),
                     Poll::Ready(Ok(row)) => Poll::Ready(Ok(As::from_row(&row))),
+                }
+            }
+        }
+    }
+};
+
+pub struct QueryMany<As: for<'r> FromRow<'r>, const N_PARAMS: usize> {
+    __as__:     PhantomData<fn()->As>,
+    connection: Connection,
+    statement:  String,
+    params:     [String; N_PARAMS],
+} const _: (/* QueyMany impls */) = {
+    impl<As: for<'r> FromRow<'r>, const N_PARAMS: usize> Future for QueryMany<As, N_PARAMS> {
+        type Output = Result<Vec<As>, Error>;
+        fn poll(self: Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
+            let mut iter = self.params.iter().map(|s| s as &(dyn ToSql + Sync));
+            let params: [_; N_PARAMS] = std::array::from_fn(move |_| unsafe {iter.next().unwrap_unchecked()});
+
+            let client = &self.connection.0;
+            match pin!(client.prepare_cached(&self.statement)).poll(cx) {
+                Poll::Pending         => return Poll::Pending,
+                Poll::Ready(Err(err)) => return Poll::Ready(Err(err.into())),
+                Poll::Ready(Ok(stmt)) => match pin!(client.query(&stmt, &params)).poll(cx) {
+                    Poll::Pending         => Poll::Pending,
+                    Poll::Ready(Err(err)) => Poll::Ready(Err(err.into())),
+                    Poll::Ready(Ok(rows)) => Poll::Ready(Ok(
+                        rows.iter()
+                            .map(|row| As::from_row(row))
+                            .collect()
+                    )),
                 }
             }
         }

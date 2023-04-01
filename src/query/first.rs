@@ -1,6 +1,6 @@
 use std::{marker::PhantomData, future::IntoFuture};
 use crate::{
-    entity::{Entity, BuildCondition, Column},
+    entity::{Entity, BuildCondition},
     condition as cond, connection::Connection, error::Error,
 };
 
@@ -15,18 +15,6 @@ impl<E: Entity> First<E> {
         self.condition = condition(E::ConditionBuilder::new()).into();
         self
     }
-    // #[inline] pub fn ORDER_ASC<const COLUMN: &'static str, F: Fn(E::ColumnSelector)->Column<COLUMN>>(mut self, column: F) -> Self {
-    //     self.order.ASC(COLUMN);
-    //     self
-    // }
-    // #[inline] pub fn ORDER_DESC<const COLUMN: &'static str, F: Fn(E::ColumnSelector)->Column<COLUMN>>(mut self, column: F) -> Self {
-    //     self.order.DESC(COLUMN);
-    //     self
-    // }
-    // #[inline] pub fn LIMIT(mut self, limit: usize) -> Self {
-    //     self.limit.set(limit);
-    //     self
-    // }
 }
 const _: (/* First impls */) = {
     impl<E: Entity> IntoFuture for First<E> {
