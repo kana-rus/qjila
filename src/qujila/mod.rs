@@ -43,6 +43,7 @@ pub const fn key(file: &'static str, line: u32, column: u32) -> cached::key {
         .write_u32(line)
         .write_u32(column)
 }
+mod cached_statements;
 mod cached {
     use std::ops::BitXor;
     use crate::connection::Connection;
@@ -52,7 +53,7 @@ mod cached {
     );
 
     #[derive(PartialEq, Eq)]
-    pub struct key(pub(in super) u32);
+    pub struct key(pub(crate) u32);
     impl key {
         pub(super) const fn init() -> Self {Self(0)}
         pub(super) const fn write_str(mut self, s: &'static str) -> Self {

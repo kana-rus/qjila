@@ -56,8 +56,8 @@ pub struct QueryMany<As: for<'r> FromRow<'r>, const N_PARAMS: usize> {
                     Poll::Pending         => Poll::Pending,
                     Poll::Ready(Err(err)) => Poll::Ready(Err(err.into())),
                     Poll::Ready(Ok(rows)) => Poll::Ready(Ok(
-                        rows.iter()
-                            .map(|row| As::from_row(row))
+                        rows.into_iter()
+                            .map(|row| As::from_row(&row))
                             .collect()
                     )),
                 }
