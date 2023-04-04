@@ -25,4 +25,6 @@ pub(crate) mod internal_macros {
     };
 }
 
-pub use qujila::Qujila;
+pub use {
+    qujila::Qujila,
+};

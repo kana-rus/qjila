@@ -1,9 +1,8 @@
-pub static CACHED_STATEMENTS: private::CachedStatements = private::CachedStatements::init();
-
+pub(crate) static mut CACHED_STATEMENTS: private::CachedStatements = private::CachedStatements::init();
 
 mod private {
     const CACHE_SIZE: usize = u32::MAX as usize;
-    pub struct CachedStatements {
+    pub(crate) struct CachedStatements {
         statements: [Option<&'static str>; CACHE_SIZE],
     } impl CachedStatements {
         pub(super) const fn init() -> Self {
