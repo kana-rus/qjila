@@ -6,6 +6,7 @@ use crate::{
 };
 
 
+#[derive(Debug)]
 pub struct Connection(
     pub(crate) Object
 );

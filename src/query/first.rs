@@ -7,11 +7,15 @@ use crate::{
 
 pub struct First<E: Entity> {
     _entity: PhantomData<fn()->E>,
-    connection: Connection,
+    connection: Result<Connection, Error>,
     condition:  cond::Condition,
 }
 impl<E: Entity> First<E> {
-    #[inline] pub fn WHERE<C: Into<cond::Condition>, F: Fn(E::ConditionBuilder)->C>(mut self, condition: F) -> Self {
+    #[inline(always)] pub fn new(connection: Result<Connection, Error>) -> Self {
+        Self { _entity: PhantomData, connection, condition: cond::Condition::new() }
+    }
+
+    #[inline(always)] pub fn WHERE<C: Into<cond::Condition>, F: Fn(E::ConditionBuilder)->C>(mut self, condition: F) -> Self {
         self.condition = condition(E::ConditionBuilder::new()).into();
         self
     }

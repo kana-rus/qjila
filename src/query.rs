@@ -12,7 +12,7 @@ use crate::{connection::Connection, entity::FromRow, error::Error};
 
 pub struct QueryOne<As: for<'r> FromRow<'r>, const N_PARAMS: usize> {
     __as__:     PhantomData<fn()->As>,
-    connection: Connection,
+    connection: Result<Connection, Error>,
     statement:  String,
     params:     [String; N_PARAMS],
 } const _: (/* QueryOne impls */) = {
@@ -22,7 +22,11 @@ pub struct QueryOne<As: for<'r> FromRow<'r>, const N_PARAMS: usize> {
             let mut iter = self.params.iter().map(|s| s as &(dyn ToSql + Sync));
             let params: [_; N_PARAMS] = std::array::from_fn(move |_| unsafe {iter.next().unwrap_unchecked()});
 
-            let client = &self.connection.0;
+            let client = match &self.connection {
+                Err(e)   => return Poll::Ready(Err(e.into())),
+                Ok(conn) => &conn.0,
+            };
+
             match pin!(client.prepare_cached(&self.statement)).poll(cx) {
                 Poll::Pending         => return Poll::Pending,
                 Poll::Ready(Err(e))   => return Poll::Ready(Err(e.into())),
@@ -38,7 +42,7 @@ pub struct QueryOne<As: for<'r> FromRow<'r>, const N_PARAMS: usize> {
 
 pub struct QueryMany<As: for<'r> FromRow<'r>, const N_PARAMS: usize> {
     __as__:     PhantomData<fn()->As>,
-    connection: Connection,
+    connection: Result<Connection, Error>,
     statement:  String,
     params:     [String; N_PARAMS],
 } const _: (/* QueyMany impls */) = {
@@ -48,7 +52,11 @@ pub struct QueryMany<As: for<'r> FromRow<'r>, const N_PARAMS: usize> {
             let mut iter = self.params.iter().map(|s| s as &(dyn ToSql + Sync));
             let params: [_; N_PARAMS] = std::array::from_fn(move |_| unsafe {iter.next().unwrap_unchecked()});
 
-            let client = &self.connection.0;
+            let client = match &self.connection {
+                Err(e)   => return Poll::Ready(Err(e.into())),
+                Ok(conn) => &conn.0,
+            };
+
             match pin!(client.prepare_cached(&self.statement)).poll(cx) {
                 Poll::Pending         => return Poll::Pending,
                 Poll::Ready(Err(err)) => return Poll::Ready(Err(err.into())),

@@ -19,11 +19,16 @@ mod db_type;
 mod condition;
 mod connection;
 
+
 pub(crate) mod internal_macros {
     pub(crate) use qujila_macros::{
         __internal__into_query,
     };
 }
+
+pub(crate) use {
+    qujila::cached_statements::CACHED_STATEMENTS
+};
 
 pub use {
     qujila::Qujila,

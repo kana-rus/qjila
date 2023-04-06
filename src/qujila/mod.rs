@@ -1,16 +1,31 @@
-use crate::{connection::Connection, error::Error};
+use crate::{
+    connection::Connection,
+    entity::Entity,
+    error::Error,
+    query,
+};
 
 
 /// A pretty qujila
 pub struct Qujila(
     deadpool_postgres::Pool
 ); impl Qujila {
-    pub(crate) async fn next(&self) -> Result<Connection, Error> {
+    #[inline(always)] pub(crate) async fn next(&self) -> Result<Connection, Error> {
         Ok(Connection(
             self.0.get().await?
         ))
     }
+
+    #[inline(always)] pub async fn Count<E: Entity>(&self) -> query::Count<E> {
+        query::Count::new(self.next().await)
+    }
+    #[inline(always)] pub async fn First<E: Entity>(&self) -> query::First<E> {
+        query::First::new(self.next().await)
+    }
 }
+
+
+
 
 #[macro_export]
 macro_rules! cached {
@@ -20,18 +35,6 @@ macro_rules! cached {
         }>($q).await
     };
 }
-
-#[cfg(test)] #[allow(unused)]
-mod __sample__ {mod qujila {pub use crate::*;}
-    use qujila::cached;
-    async fn __sample__(q: &qujila::Qujila) {
-        let cached_qujila = cached!(q);
-    }
-}
-
-
-
-
 pub async fn cache<const KEY: cached::key>(q: &Qujila) -> cached::Qujila<KEY> {
     cached::Qujila(
         q.next().await.expect("Failed to get connection")
@@ -43,14 +46,10 @@ pub const fn key(file: &'static str, line: u32, column: u32) -> cached::key {
         .write_u32(line)
         .write_u32(column)
 }
-mod cached_statements;
+pub(crate) mod cached_statements;
 mod cached {
     use std::ops::BitXor;
     use crate::connection::Connection;
-
-    pub struct Qujila<const KEY: key>(
-        pub(super) Connection
-    );
 
     #[derive(PartialEq, Eq)]
     pub struct key(pub(crate) u32);
@@ -75,6 +74,12 @@ mod cached {
                 .wrapping_mul(0x27220A95)
             )
         }
+    }
+
+    pub struct Qujila<const KEY: key>(
+        pub(super) Connection
+    ); impl<const KEY: key> Qujila<KEY> {
+        
     }
 }
 
