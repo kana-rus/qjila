@@ -2,7 +2,7 @@ use crate::{
     connection::Connection,
     entity::Entity,
     error::Error,
-    query,
+    query, config::Config,
 };
 
 
@@ -14,6 +14,12 @@ pub struct Qujila(
         Ok(Connection(
             self.0.get().await?
         ))
+    }
+
+    pub async fn new(config: Config) -> Self {
+        
+
+        todo!()
     }
 
     #[inline(always)] pub async fn Count<E: Entity>(&self) -> query::Count<E> {

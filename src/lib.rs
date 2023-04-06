@@ -15,6 +15,7 @@ mod error;
 mod query;
 pub mod qujila;
 mod entity;
+mod config;
 mod db_type;
 mod condition;
 mod connection;
