@@ -22,15 +22,14 @@ qujila::schema! {
     },
 
     /* == model == */
-    // `mod` stands for `model`
-    mod User {
+    User {
         id: users.id,
         name: users.name,
         password: users.password,
         profile: users.profile,
     }
     // or
-    mod User {
+    User {
         id, name, password, profile
         in users
     }
@@ -44,11 +43,11 @@ Mr.Sample decided to NOT use `created_at`, `updated_at` columns in the model
 2. Execute migration by `qujila sync` at the top of the project. `qujila` command will be installable by `cargo install qujila-cli`.
 
 ```sh
-MrSample $ qujila sync ${DB_URL}
+$ qujila sync ${DB_URL}
 ```
 You can emit `up.sql` and `down.sql` by `--emit-sql` flag：
 ```sh
-MrSample $ qujila sync ${DB_URL} --emit-sql
+$ qujila sync ${DB_URL} --emit-sql ${migration_directory_path}
 ```
 
 <br/>
@@ -95,18 +94,10 @@ use crate::schema::{
     model::User,
 };
 
-#[RequestBody(JSON @ Self::validate)]
+#[RequestBody(JSON)]
 struct CreateUserRequest {
     name:     String,
     password: String,
-} impl CreateUserRequest {
-    fn validate(&self) -> Result<()> {
-        if &self.password == "password" {
-            Err(Error::validation("crazy password!!!"))
-        } else {
-            Ok(())
-        }
-    }
 }
 
 async fn create_user(c: Context,
@@ -136,18 +127,10 @@ async fn get_user(c: Context, id: usize) -> Response<User> {
     c.json(user)
 }
 
-#[RequestBody(JSON @ Self::validate)]
+#[RequestBody(JSON)]
 struct UpdateUserRequest {
     name:     Option<String>,
     password: Option<String>,
-} impl UpdateUserRequest {
-    fn validate(&self) -> Result<()> {
-        if self.password.contains("password") {
-            Err(Error::validation("crazy password!!!"))
-        } else {
-            Ok(())
-        }
-    }
 }
 
 async fn update_user(c: Context
