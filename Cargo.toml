@@ -1,6 +1,7 @@
 [workspace]
 members = [
     ".",
+    "core",
     "macros",
 ]
 
@@ -10,12 +11,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-qujila_macros = { verion = "0.1.0", path = "./macros" }
-deadpool-postgres = { verion = "0.10", default_features = false, optional = true }
+sqlx = { version = "0.6", default_features = false }
+tokio = { optional = true, version = "1", features = ["time", "net", "sync", "fs", "io-util", "rt"] }
+async-std = { optional = true, version = "1" }
 
 [features]
-default = ["db_postgres", "runtime_tokio"]
+default = ["rt_tokio", "db_postgres"]
 
-db_postgres = ["dep:deadpool-postgres"]
-runtime_tokio = ["deadpool-postgres?/rt_tokio_1"]
-runtime_async-std = ["deadpool-postgres?/rt_async-std_1"]
+rt_tokio = ["dep:tokio", "sqlx/runtime-tokio-native-tls"]
+rt_async-std = ["dep:async-std", "sqlx/runtime-async-std-native-tls"]
+
+db_postgres = ["sqlx/postgres"]
+db_mysql = ["sqlx/mysql"]
+db_sqlite = ["sqlx/sqlite"]

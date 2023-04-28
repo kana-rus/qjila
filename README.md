@@ -36,7 +36,7 @@ qujila::schema! {
 }
 ```
 
-Mr.Sample decided to NOT use `created_at`, `updated_at` columns in the model
+Mr.Sample decided to NOT use `created_at`, `updated_at` columns for `User` model.
 
 <br/>
 
@@ -98,13 +98,14 @@ use crate::schema::{
 struct CreateUserRequest {
     name:     String,
     password: String,
+    profile:  String,
 }
 
 async fn create_user(c: Context,
     payload: CreateUserRequest
 ) -> Response<User> {
     let CreateUserRequest {
-        name, password
+        name, password, profile
     } = payload;
 
     if users(|u|
@@ -116,6 +117,7 @@ async fn create_user(c: Context,
         let new_user = users.Create()
             .name(name)
             .password(hash_func(&password))
+            .profile(profile)
             .await?;
         c.Created(new_user)
     }
@@ -131,6 +133,7 @@ async fn get_user(c: Context, id: usize) -> Response<User> {
 struct UpdateUserRequest {
     name:     Option<String>,
     password: Option<String>,
+    profile:  Option<String>,
 }
 
 async fn update_user(c: Context
@@ -148,6 +151,9 @@ async fn update_user(c: Context
         }
         if let Some(new_password) = payload.password {
             updater.set_password(hash_func(new_password))
+        }
+        if let Some(new_profile) = payload.profile {
+            updater.set_profile(new_profile)
         }
         updater.await?;
 
