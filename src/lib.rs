@@ -1,5 +1,7 @@
+/*===== compiler features, allows =====*/
 #![feature(
     array_methods,
+    string_leak,
     const_ops, const_trait_impl, const_slice_index
 )]
 
@@ -8,29 +10,63 @@
 )]
 
 #![allow(
-    non_snake_case, non_camel_case_types
+    non_snake_case, non_camel_case_types,
 )]
 
-mod error;
-mod query;
-pub mod qujila;
-mod entity;
-mod config;
-mod db_type;
-mod condition;
-mod connection;
+
+/*===== features flags =====*/
+#[cfg(any(
+    all(feature="rt_tokio", feature="rt_async-std"),
+))] compile_error!("
+    Can't enable multiple `rt_*` features!
+");
+
+#[cfg(any(
+    all(feature="db_postgres", feature="db_mysql"),
+    all(feature="db_mysql", feature="db_sqlite"),
+    all(feature="db_sqlite", feature="db_postgres"),
+))] compile_error!("
+    Can't enable multiple `db_*` features!
+");
 
 
-pub(crate) mod internal_macros {
-    pub(crate) use qujila_macros::{
-        __internal__into_query,
-    };
+/*===== feature-abstruction layer =====*/
+mod __sqlx__ {
+    #[cfg(feature="db_postgres")]
+    pub(crate) use sqlx::postgres::PgRow as Row;
+    #[cfg(feature="db_mysql")]
+    pub(crate) use sqlx::mysql::MySqlRow as Row;
+    #[cfg(feature="db_sqlite")]
+    pub(crate) use sqlx::sqlite::SqliteRow;
+
+    #[cfg(feature="db_postgres")]
+    pub(crate) use sqlx::PgPool as ConnectionPool;
+    #[cfg(feature="db_mysql")]
+    pub(crate) use sqlx::MySqlPool as ConnectionPool;
+    #[cfg(feature="db_sqlite")]
+    pub(crate) use sqlx::SqlitePool as ConnectionPool;
+
+    #[cfg(feature="db_postgres")]
+    pub(crate) use sqlx::postgres::PgPoolOptions as PoolConfig;
+    #[cfg(feature="db_mysql")]
+    pub(crate) use sqlx::mysql::MySqlPoolOptions as PoolConfig;
+    #[cfg(feature="db_sqlite")]
+    pub(crate) use sqlx::sqlite::SqlitePoolOptions as PoolConfig;
 }
 
-pub(crate) use {
-    qujila::cached_statements::CACHED_STATEMENTS
-};
 
-pub use {
-    qujila::Qujila,
-};
+/*===== modules =====*/
+mod error;
+mod query;
+mod qujila;
+mod db_type;
+mod condition;
+
+mod table;
+mod model;
+
+mod pool;
+
+
+/*===== visibility =====*/
+pub use error::Error;

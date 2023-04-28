@@ -5,8 +5,7 @@ use std::{
 use crate::{
     error::Error,
     condition as cond,
-    connection::Connection,
-    entity::{Entity, BuildCondition},
+    
 };
 
 

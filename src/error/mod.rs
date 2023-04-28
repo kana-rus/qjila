@@ -1,7 +1,3 @@
-use deadpool_postgres::PoolError;
-use deadpool_postgres::tokio_postgres::Error as TokioPostgresError;
-
-
 #[derive(Debug)]
 pub enum Error {
     ConfigError(String),
@@ -18,13 +14,8 @@ impl From<&Error> for Error {
         }
     }
 }
-impl From<PoolError> for Error {
-    fn from(value: PoolError) -> Self {
-        Self::ConfigError(value.to_string())
-    }
-}
-impl From<TokioPostgresError> for Error {
-    fn from(value: TokioPostgresError) -> Self {
+impl From<sqlx::Error> for Error {
+    fn from(value: sqlx::Error) -> Self {
         Self::DBError(value.to_string())
     }
 }
