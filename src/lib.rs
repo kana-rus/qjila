@@ -82,4 +82,5 @@ pub(crate) use pool::pool;
 /*===== public reexport =====*/
 pub use error::Error;
 pub use pool::spawn;
-pub use model::Model;
+pub use model::{Model, FromRow};
+pub use table::Table;

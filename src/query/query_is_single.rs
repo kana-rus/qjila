@@ -1,25 +1,25 @@
 use std::{
     future::Future,
     pin::pin,
-    task::Poll,
+    task::Poll, marker::PhantomData,
 };
 use crate::{
     condition::Condition,
     Error,
-    pool,
+    pool, Table,
 };
 
 
-pub struct is_single<const TABLE_NAME: &'static str> {
+pub struct is_single<T: Table> {
+    __table__: PhantomData<fn()->T>,
     condition: Condition,
 }
-
-impl<const TABLE_NAME: &'static str> Future for is_single<TABLE_NAME> {
+impl<T: Table> Future for is_single<T> {
     type Output = Result<bool, Error>;
     fn poll(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
         let sql = format!(
             "SELECT COUNT(*) FROM {} {}",
-            TABLE_NAME,
+            T::TABLE_NAME,
             self.condition,
         );
         let fetch_future = pin!(

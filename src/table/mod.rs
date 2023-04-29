@@ -3,9 +3,12 @@ use crate::{
 };
 
 
-pub trait Querier<const TABLE_NAME: &'static str> {
-    fn exists(&self) -> query::exists<TABLE_NAME>;
-    fn is_single(&self) -> query::is_single<TABLE_NAME>;
+pub trait Table: Sized {
+    const TABLE_NAME: &'static str;
+    type Filter;
+
+    fn exists(&self) -> query::exists<Self>;
+    fn is_single(&self) -> query::is_single<Self>;
 
     fn delete(&self);
     fn Delete(&self);
@@ -23,13 +26,4 @@ pub trait Querier<const TABLE_NAME: &'static str> {
     fn update(&self) -> Self::updater;
     type Updater;
     fn Update(&self) -> Self::Updater;
-}
-
-
-pub trait Table {
-    const TABLE_NAME: &'static str;
-}
-
-pub trait FilteredTable {
-    const TABLE_NAME: &'static str;
 }
