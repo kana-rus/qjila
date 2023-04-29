@@ -4,7 +4,7 @@ use std::{
     pin::pin,
 };
 use crate::{
-    __sqlx__,
+    __feature__,
     Error,
     pool,
     Model,
@@ -38,7 +38,7 @@ impl<const TABLE_NAME: &'static str> Future for create<TABLE_NAME> {
             )
         };
         let query = {
-            let mut query = sqlx::query::<__sqlx__::DB>(&sql);
+            let mut query = sqlx::query::<__feature__::DB>(&sql);
             for value in &self.column_values {
                 query = query.bind(value)
             }

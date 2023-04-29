@@ -31,7 +31,7 @@
 
 
 /*===== feature-abstruction layer =====*/
-mod __sqlx__ {
+mod __feature__ {
     #[cfg(feature="db_postgres")]
     pub(crate) use sqlx::postgres::PgRow as Row;
     #[cfg(feature="db_mysql")]

@@ -1,4 +1,4 @@
-use crate::__sqlx__::PoolConfig;
+use crate::__feature__::PoolConfig;
 
 
 #[derive(Clone)]

@@ -6,14 +6,14 @@ use std::future::Future;
 
 mod __ {
     use std::sync::OnceLock;
-    use crate::__sqlx__::ConnectionPool;
+    use crate::__feature__::ConnectionPool;
 
     pub(crate) static CONNECTION_POOL: OnceLock<ConnectionPool> = OnceLock::new();
 }
 
 
 /// **MUST** be called **AFTER** `spawn().〜.await?;` was executed
-pub(crate) fn pool<'p>() -> &'p crate::__sqlx__::ConnectionPool {
+pub(crate) fn pool<'p>() -> &'p crate::__feature__::ConnectionPool {
     __::CONNECTION_POOL.get()
         .expect("connection pool isn't initialized")
 }
