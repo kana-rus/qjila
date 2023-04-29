@@ -1,18 +1,11 @@
 use crate::{
-    condition::Condition,
     query,
 };
 
 
-pub trait Querier {
-    fn exists(&self) -> query::exists;
-    fn is_single(&self);
-
-    fn create(&self);
-    fn Create(&self);
-
-    fn update(&self);
-    fn Update(&self);
+pub trait Querier<const TABLE_NAME: &'static str> {
+    fn exists(&self) -> query::exists<TABLE_NAME>;
+    fn is_single(&self) -> query::is_single<TABLE_NAME>;
 
     fn delete(&self);
     fn Delete(&self);
@@ -20,6 +13,16 @@ pub trait Querier {
     fn Single(&self);
     fn First(&self);
     fn All(&self);
+
+    type creater;
+    fn create(&self) -> Self::creater;
+    type Creater;
+    fn Create(&self) -> Self::Creater;
+
+    type updater;
+    fn update(&self) -> Self::updater;
+    type Updater;
+    fn Update(&self) -> Self::Updater;
 }
 
 

@@ -10,11 +10,11 @@ use crate::{
 };
 
 
-pub struct exists<const TABLE_NAME: &'static str> {
+pub struct is_single<const TABLE_NAME: &'static str> {
     condition: Condition,
 }
 
-impl<const TABLE_NAME: &'static str> Future for exists<TABLE_NAME> {
+impl<const TABLE_NAME: &'static str> Future for is_single<TABLE_NAME> {
     type Output = Result<bool, Error>;
     fn poll(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
         let sql = format!(
@@ -30,7 +30,7 @@ impl<const TABLE_NAME: &'static str> Future for exists<TABLE_NAME> {
         match fetch_future.poll(cx) {
             Poll::Pending => Poll::Pending,
             Poll::Ready(Err(e)) => Poll::Ready(Err(e.into())),
-            Poll::Ready(Ok((count,))) => Poll::Ready(Ok(count > 0)),
+            Poll::Ready(Ok((count,))) => Poll::Ready(Ok(count == 1)),
         }
     }
 }

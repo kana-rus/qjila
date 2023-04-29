@@ -3,7 +3,7 @@ mod limit; pub(crate) use limit::Limit;
 mod number_condition; pub(crate) use number_condition::NumberCondition;
 mod string_condition; pub(crate) use string_condition::StringCondition;
 
-
+/// TODO: parameterize
 pub struct Condition(
     String
 );

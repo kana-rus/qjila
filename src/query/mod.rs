@@ -6,3 +6,8 @@
 // mod delete; pub(crate) use delete::{Delete, _Delte};
 
 mod query_exists; pub use query_exists::{exists};
+mod query_is_single; pub use query_is_single::{is_single};
+
+mod query_create;
+
+

@@ -52,6 +52,13 @@ mod __sqlx__ {
     pub(crate) use sqlx::mysql::MySqlPoolOptions as PoolConfig;
     #[cfg(feature="db_sqlite")]
     pub(crate) use sqlx::sqlite::SqlitePoolOptions as PoolConfig;
+
+    #[cfg(feature="db_postgres")]
+    pub(crate) use sqlx::Postgres as DB;
+    #[cfg(feature="db_mysql")]
+    pub(crate) use sqlx::MySql as DB;
+    #[cfg(feature="db_sqlite")]
+    pub(crate) use sqlx::Sqlite as DB;
 }
 
 
@@ -68,5 +75,11 @@ mod model;
 mod pool;
 
 
-/*===== visibility =====*/
+/*===== in-module public reexprt =====*/
+pub(crate) use pool::pool;
+
+
+/*===== public reexport =====*/
 pub use error::Error;
+pub use pool::spawn;
+pub use model::Model;
