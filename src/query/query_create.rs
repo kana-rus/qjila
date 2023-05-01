@@ -63,10 +63,11 @@ impl<T: Table, M: Model> Future for Create<T, M> {
                 .collect::<Vec<_>>()
                 .join(",");
             format!(
-                "INSERT INTO {} ({}) VALUES ({}) RETURNING *",
+                "INSERT INTO {} ({}) VALUES ({}) RETURNING {}",
                 T::TABLE_NAME,
                 self.column_names.join(","),
                 params,
+                M::SELECT_COLUMNS,
             )
         };
         let query = {

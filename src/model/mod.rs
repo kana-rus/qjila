@@ -2,6 +2,10 @@ use crate::{__feature__, Error};
 use sqlx::FromRow as FromSqlxRow;
 
 
+pub trait Model: for<'r> FromRow<'r> {
+    const SELECT_COLUMNS: &'static str;
+}
+
 pub trait FromRow<'r>: Sized {
     fn from_row(row: &'r __feature__::Row) -> Result<Self, Error>;
 }
@@ -26,12 +30,11 @@ fn __asert_impls__() {
     is_from_sqlx_row::<(String,)>();
     is_from_sqlx_row::<(&str,)>();
 }
-impl<'r, F: FromSqlxRow<'r, __feature__::Row>> FromRow<'r> for F {
+impl<'r, F> FromRow<'r> for F
+where
+    F: FromSqlxRow<'r, __feature__::Row>
+{
     fn from_row(row: &'r __feature__::Row) -> Result<Self, Error> {
         Ok(<F as FromSqlxRow<'r, __feature__::Row>>::from_row(row)?)
     }
-}
-
-pub trait Model: for<'r> FromRow<'r> {
-    
 }

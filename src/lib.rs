@@ -1,4 +1,4 @@
-/*===== compiler features, allows =====*/
+/*===== compiler features, allow lints =====*/
 #![feature(
     array_methods,
     string_leak,
@@ -14,7 +14,7 @@
 )]
 
 
-/*===== features flags =====*/
+/*===== feature management =====*/
 #[cfg(any(
     all(feature="rt_tokio", feature="rt_async-std"),
 ))] compile_error!("
@@ -37,7 +37,7 @@ mod __feature__ {
     #[cfg(feature="db_mysql")]
     pub(crate) use sqlx::mysql::MySqlRow as Row;
     #[cfg(feature="db_sqlite")]
-    pub(crate) use sqlx::sqlite::SqliteRow;
+    pub(crate) use sqlx::sqlite::SqliteRow as Row;
 
     #[cfg(feature="db_postgres")]
     pub(crate) use sqlx::PgPool as ConnectionPool;
@@ -65,7 +65,6 @@ mod __feature__ {
 /*===== modules =====*/
 mod error;
 mod query;
-mod qujila;
 mod db_type;
 mod condition;
 

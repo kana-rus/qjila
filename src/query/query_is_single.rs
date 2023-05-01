@@ -18,7 +18,7 @@ impl<T: Table> Future for is_single<T> {
     type Output = Result<bool, Error>;
     fn poll(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
         let sql = format!(
-            "SELECT COUNT(*) FROM {} {}",
+            "SELECT COUNT(id) FROM (SELECT 1 as id FROM {} {} LIMIT 1)",
             T::TABLE_NAME,
             self.condition,
         );

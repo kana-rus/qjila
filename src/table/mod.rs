@@ -5,6 +5,7 @@ use crate::{
 
 pub trait Table: Sized {
     const TABLE_NAME: &'static str;
+    const ID_COLUMN:  Option<&'static str>;
     type Filter;
 
     fn exists(&self) -> query::exists<Self>;

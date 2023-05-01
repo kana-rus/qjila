@@ -3,17 +3,23 @@ pub struct Limit(
 );
 
 impl Limit {
-    #[inline] pub(crate) fn new() -> Self {
+    #[inline(always)] pub(crate) fn new() -> Self {
         Self(None)
     }
-    #[inline] pub(crate) fn set(&mut self, limit: usize) {
+    #[inline(always)] pub(crate) fn is_empty(&self) -> bool {
+        self.0.is_none()
+    } 
+    #[inline(always)] pub(crate) fn is_set(&self) -> bool {
+        self.0.is_some()
+    } 
+    #[inline(always)] pub(crate) fn set(&mut self, limit: usize) {
         self.0.replace(limit);
     }
 }
 
 const _: (/* Limit impls */) = {
     impl std::fmt::Display for Limit {
-        #[inline] fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        #[inline(always)] fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self.0 {
                 None => Ok(()),
                 Some(limit) => write!(f, "LIMIT {limit}"),
