@@ -5,33 +5,28 @@
 # Working Draft for **qujila** DB library
 # ( any codes here don't run now )
 
-## How to Use
+## Example; How to Use
 1. Define schema in `src/schema.rs` using `qujila::schema!` macro. This will be editor-completable to some extent (by idea of **wrapping macro_rules**).
 
 `src/schema.rs`
 ```rust
 qujila::schema! {
     /* == table == */
-    users = {
+    users {
         id:         __ID__,
         name:       VARCHAR(20) where NOT_NULL,
         password:   VARCHAR(20) where NOT_NULL,
         profile:    TEXT,
         created_at: __CREATED_AT__,
         updated_at: __UPDATED_AT__,
-    },
+    }
 
     /* == model == */
-    User {
-        id: users.id,
-        name: users.name,
+    struct User {
+        id:       users.id,
+        name:     users.name,
         password: users.password,
-        profile: users.profile,
-    }
-    // or
-    User {
-        id, name, password, profile
-        in users
+        profile:  users.profile,
     }
 }
 ```
@@ -45,7 +40,7 @@ Mr.Sample decided to NOT use `created_at`, `updated_at` columns for `User` model
 ```sh
 $ qujila sync ${DB_URL}
 ```
-You can emit `up.sql` and `down.sql` by `--emit-sql` flag：
+Then, you can emit `up.sql` and `down.sql` by `--emit-sql` flag：
 ```sh
 $ qujila sync ${DB_URL} --emit-sql ${migration_directory_path}
 ```
@@ -65,6 +60,7 @@ use ohkami::prelude::*;
 use crate::handler::{
     users::*,
 };
+
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -94,6 +90,7 @@ use crate::schema::{
     model::User,
 };
 
+
 #[RequestBody(JSON)]
 struct CreateUserRequest {
     name:     String,
@@ -108,6 +105,10 @@ async fn create_user(c: Context,
         name, password, profile
     } = payload;
 
+    // or
+    struct User {
+        id, name, password, profile
+    }
     if users(|u|
         u.name.eq(&name) &
         u.password.eq(hash_func(&password))
@@ -124,8 +125,7 @@ async fn create_user(c: Context,
 }
 
 async fn get_user(c: Context, id: usize) -> Response<User> {
-    let user = users(|u| u.id.eq(id))
-        .Single().await?;
+    let user = users(|u| u.id.eq(id)).Single().await?;
     c.json(user)
 }
 
@@ -142,7 +142,7 @@ async fn update_user(c: Context
 ) -> Response<()> {
     let target = users(|u| u.id.eq(id));
 
-    if target.is_not_single() {
+    if ! target.is_single() {
         c.InternalServerError("user is not single")
     } else {
         let updater = target.update();
@@ -164,7 +164,7 @@ async fn update_user(c: Context
 async fn delete_user(c: Context, id: usize) -> Response<()> {
     let target = users(|u| u.id.eq(id));
     
-    if target.is_not_single().await? {
+    if ! target.is_single().await? {
         c.InternalServerError("user not single")
     } else {
         target.delete().await?;
@@ -172,6 +172,13 @@ async fn delete_user(c: Context, id: usize) -> Response<()> {
     }
 }
 ```
+
+<br/>
+
+## TODOs
+- **top priority**: support **relations**
+- support **JOIN**
+- support **TRANSACTION**
 
 <br/>
 
