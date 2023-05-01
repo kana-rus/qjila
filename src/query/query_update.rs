@@ -45,12 +45,10 @@ impl<T: Table> Future for update<T> {
 
         #[cfg(not(feature="db_mysql"))]
         let sql = if (self.limit.is_set() || self.order.is_set()) && T::ID_COLUMN.is_none() {
-            return Poll::Ready(Err(Error::ConfigError(
-                format!(
-                    "Query `update` from {}: In `update`, you can set `LIMIT` or `ORDER` only when the table has a unique column.",
-                    T::TABLE_NAME,
-                )
-            )))
+            return Poll::Ready(Err(Error::ConfigError(format!(
+                "Query `update` from {}: In `update`, you can set `LIMIT` or `ORDER` only when the table has a unique column.",
+                T::TABLE_NAME,
+            ))))
         } else {format!(
             "UPDATE {} SET {} WHERE {} IN ( SELECT {} FROM {} {} {} {} )",
             T::TABLE_NAME,
@@ -107,12 +105,10 @@ impl<T: Table, M: Model> Future for Update<T, M> {
 
         #[cfg(not(feature="db_mysql"))]
         let sql = if (self.limit.is_set() || self.order.is_set()) && T::ID_COLUMN.is_none() {
-            return Poll::Ready(Err(Error::ConfigError(
-                format!(
-                    "Query `update` from {}: In `update`, you can set `LIMIT` or `ORDER` only when the table has a unique column.",
-                    T::TABLE_NAME,
-                )
-            )))
+            return Poll::Ready(Err(Error::ConfigError(format!(
+                "Query `Update` from {}: In `Update`, you can set `LIMIT` or `ORDER` only when the table has a unique column.",
+                T::TABLE_NAME,
+            ))))
         } else {format!(
             "UPDATE {} SET {} WHERE {} IN ( SELECT {} FROM {} {} {} {} ) RETURNING {}",
             T::TABLE_NAME,
