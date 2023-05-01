@@ -4,6 +4,7 @@ use sqlx::FromRow as FromSqlxRow;
 
 pub trait Model: for<'r> FromRow<'r> {
     const SELECT_COLUMNS: &'static str;
+    type Filter;
 }
 
 pub trait FromRow<'r>: Sized {

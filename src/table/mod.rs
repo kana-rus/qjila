@@ -1,22 +1,23 @@
 use crate::{
-    query,
+    query, Model,
 };
 
 
 pub trait Table: Sized {
     const TABLE_NAME: &'static str;
     const ID_COLUMN:  Option<&'static str>;
-    type Filter;
 
+    fn count(&self) -> query::count<Self>;
     fn exists(&self) -> query::exists<Self>;
     fn is_single(&self) -> query::is_single<Self>;
 
-    fn delete(&self);
-    fn Delete(&self);
+    fn delete(&self) -> query::delete<Self>;
+    fn Delete<M: Model>(&self) -> query::Delete<Self, M>;
 
-    fn Single(&self);
-    fn First(&self);
-    fn All(&self);
+    fn Single<M: Model>(&self) -> query::Single<Self, M>;
+    fn First<M: Model>(&self) -> query::First<Self, M>;
+    fn All<M: Model>(&self) -> query::All<Self, M>;
+    fn Search<M: Model>(&self) -> query::Search<Self, M>;
 
     type creater;
     fn create(&self) -> Self::creater;

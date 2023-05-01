@@ -57,6 +57,14 @@ impl<T: Table> Future for delete<T> {
         }
     }
 }
+impl<T: Table> delete<T> {
+    #[inline] pub(crate) fn new(condition: cond::Condition) -> Self {
+        Self { __table__: PhantomData, condition,
+            limit: cond::Limit::new(),
+            order: cond::Order::new(),
+        }
+    }
+}
 
 pub struct Delete<T: Table, M: Model> {
     __table__: PhantomData<fn()->T>,
@@ -102,6 +110,14 @@ impl<T: Table, M: Model> Future for Delete<T, M> {
             Poll::Pending => Poll::Pending,
             Poll::Ready(Err(err)) => Poll::Ready(Err(err.into())),
             Poll::Ready(Ok(rows)) => Poll::Ready(rows.into_iter().map(|row| M::from_row(&row)).collect()),
+        }
+    }
+}
+impl<T: Table, M: Model> Delete<T, M> {
+    #[inline] pub(crate) fn new(condition: cond::Condition) -> Self {
+        Self { __table__: PhantomData, __model__: PhantomData, condition,
+            limit: cond::Limit::new(),
+            order: cond::Order::new(),
         }
     }
 }

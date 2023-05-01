@@ -35,3 +35,8 @@ impl<T: Table, M: Model> Future for Search<T, M> {
         }
     }
 }
+impl<T: Table, M: Model> Search<T, M> {
+    #[inline] pub(crate) fn new(condition: Condition) -> Self {
+        Self { __table__: PhantomData, __model__: PhantomData, condition }
+    }
+}

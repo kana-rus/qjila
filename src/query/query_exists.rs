@@ -31,3 +31,8 @@ impl<T: Table> Future for exists<T> {
         }
     }
 }
+impl<T: Table> exists<T> {
+    #[inline] pub(crate) fn new(condition: Condition) -> Self {
+        Self { __table__: PhantomData, condition }
+    }
+}

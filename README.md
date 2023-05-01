@@ -177,6 +177,7 @@ async fn delete_user(c: Context, id: usize) -> Response<()> {
 
 ## TODOs
 - **top priority**: support **relations**
+- **second priority**: parameterize conditions
 - support **JOIN**
 - support **TRANSACTION**
 

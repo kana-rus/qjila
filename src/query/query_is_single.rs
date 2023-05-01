@@ -34,3 +34,8 @@ impl<T: Table> Future for is_single<T> {
         }
     }
 }
+impl<T: Table> is_single<T> {
+    #[inline] pub(crate) fn new(condition: Condition) -> Self {
+        Self { __table__: PhantomData, condition }
+    }
+}

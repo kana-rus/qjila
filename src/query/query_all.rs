@@ -39,3 +39,11 @@ impl<T: Table, M: Model> Future for All<T, M> {
         }
     }
 }
+impl<T: Table, M: Model> All<T, M> {
+    #[inline] pub(crate) fn new(condition: cond::Condition) -> Self {
+        Self { __table__: PhantomData, __model__: PhantomData, condition,
+            order: cond::Order::new(),
+            limit: cond::Limit::new(),
+        }
+    }
+}

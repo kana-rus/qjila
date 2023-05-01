@@ -11,22 +11,51 @@ use crate::{
     Table,
     condition as cond,
 };
+use super::Q;
 
-fn set_params(set_columns: &Vec<String>) -> String {
-    (1..=set_columns.len())
-        .map(|n| format!("{} = ${n}", set_columns[n-1]))
-        .collect::<Vec<_>>()
-        .join(",")
+/// create `String` like
+/// `"name=$1,password=$2,age=$3"`
+/// used in `UPDATE table SET 〜` query
+#[inline] fn build_set_params(set_columns: &Q<&'static str>) -> String {
+    let mut params = if set_columns.len < 10 {
+        set_columns.enumerate()
+            .fold(
+                String::with_capacity(6*set_columns.len-1),
+                |mut params, (n, column)| {
+                    params.push_str(column);
+                    params.push('=');
+                    params.push('$');
+                    params.push(n as u8 as char);
+                    params.push(',');
+                    params
+                }
+            )
+    } else {
+        set_columns.enumerate()
+            .fold(
+                String::with_capacity(6*set_columns.len-1),
+                |mut params, (n, column)| {
+                    params.push_str(column);
+                    params.push('=');
+                    params.push('$');
+                    params.push_str(&n.to_string());
+                    params.push(',');
+                    params
+                }
+            )
+    };
+    let _ = params.pop(); // remove final ','
+    params
 }
 
 
 pub struct update<T: Table> {
-    __table__: PhantomData<fn()->T>,
-    set_columns: Vec<String>,
-    set_values:  Vec<String>,
-    condition: cond::Condition,
-    limit:     cond::Limit,
-    order:     cond::Order,
+    __table__:   PhantomData<fn()->T>,
+    set_columns: Q<&'static str>,
+    set_values:  Q<String>,
+    condition:   cond::Condition,
+    limit:       cond::Limit,
+    order:       cond::Order,
 }
 impl<T: Table> Future for update<T> {
     type Output = Result<(), Error>;
@@ -37,7 +66,7 @@ impl<T: Table> Future for update<T> {
         let sql = format!(
            "UPDATE {} SET {} {} {} {}",
            T::TABLE_NAME,
-           set_params(self.set_columns),
+           build_set_params(&self.set_columns),
            self.condition,
            self.order,
            self.limit,
@@ -52,7 +81,7 @@ impl<T: Table> Future for update<T> {
         } else {format!(
             "UPDATE {} SET {} WHERE {} IN ( SELECT {} FROM {} {} {} {} )",
             T::TABLE_NAME,
-            set_params(&self.set_columns),
+            build_set_params(&self.set_columns),
             T::ID_COLUMN.unwrap(),
             T::ID_COLUMN.unwrap(),
             T::TABLE_NAME,
@@ -77,15 +106,23 @@ impl<T: Table> Future for update<T> {
         }
     }
 }
+impl<T: Table> update<T> {
+    #[inline] pub(crate) fn new(condition: cond::Condition, set_columns: Q<&'static str>, set_values: Q<String>) -> Self {
+        Self { __table__:PhantomData, set_columns, set_values, condition,
+            limit: cond::Limit::new(),
+            order: cond::Order::new(),
+        }
+    }
+}
 
 pub struct Update<T: Table, M: Model> {
-    __table__: PhantomData<fn()->T>,
-    __model__: PhantomData<fn()->M>,
-    set_columns: Vec<String>,
-    set_values:  Vec<String>,
-    condition: cond::Condition,
-    limit:     cond::Limit,
-    order:     cond::Order,
+    __table__:   PhantomData<fn()->T>,
+    __model__:   PhantomData<fn()->M>,
+    set_columns: Q<&'static str>,
+    set_values:  Q<String>,
+    condition:   cond::Condition,
+    limit:       cond::Limit,
+    order:       cond::Order,
 }
 impl<T: Table, M: Model> Future for Update<T, M> {
     type Output = Result<Vec<M>, Error>;
@@ -96,6 +133,7 @@ impl<T: Table, M: Model> Future for Update<T, M> {
         let sql = format!(
            "UPDATE {} SET {} {} {} {} RETURNING {}",
            T::TABLE_NAME,
+           build_set_params(&self.set_columns),
            set_params(self.set_columns),
            self.condition,
            self.order,
@@ -112,7 +150,7 @@ impl<T: Table, M: Model> Future for Update<T, M> {
         } else {format!(
             "UPDATE {} SET {} WHERE {} IN ( SELECT {} FROM {} {} {} {} ) RETURNING {}",
             T::TABLE_NAME,
-            set_params(&self.set_columns),
+            build_set_params(&self.set_columns),
             T::ID_COLUMN.unwrap(),
             T::ID_COLUMN.unwrap(),
             T::TABLE_NAME,
@@ -137,4 +175,17 @@ impl<T: Table, M: Model> Future for Update<T, M> {
             Poll::Ready(Ok(rows)) => Poll::Ready(rows.into_iter().map(|row| M::from_row(&row)).collect()),
         }
     }
+}
+impl<T: Table, M: Model> Update<T, M> {
+    #[inline] pub(crate) fn new(condition: cond::Condition, set_columns: Q<&'static str>, set_values: Q<String>) -> Self {
+        Self { __table__:PhantomData, __model__:PhantomData, set_columns, set_values, condition,
+            limit: cond::Limit::new(),
+            order: cond::Order::new(),
+        }
+    }
+}
+
+#[cfg(test)]
+fn __<T1: Table, M1: Model>() {
+    let _updater = Update::<T1, M1>::new(cond::Condition::new(), Q::new(), Q::new());
 }
