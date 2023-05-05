@@ -2,8 +2,7 @@
     <h1>qujila</h1>
 </div>
 
-# Working Draft for **qujila** DB library
-# ( any codes here don't run now )
+# Working Draft for **qujila** DB library ( any codes here don't run now )
 
 ## Example; How to Use
 1. Define schema in `src/schema.rs` using `qujila::schema!` macro. This will be editor-completable to some extent (by idea of **wrapping macro_rules**).
@@ -11,8 +10,7 @@
 `src/schema.rs`
 ```rust
 qujila::schema! {
-    /* == table == */
-    users {
+    User {
         id:         __ID__,
         name:       VARCHAR(20) where NOT_NULL,
         password:   VARCHAR(20) where NOT_NULL,
@@ -20,18 +18,8 @@ qujila::schema! {
         created_at: __CREATED_AT__,
         updated_at: __UPDATED_AT__,
     }
-
-    /* == model == */
-    struct User {
-        id:       users.id,
-        name:     users.name,
-        password: users.password,
-        profile:  users.profile,
-    }
 }
 ```
-
-Mr.Sample decided to NOT use `created_at`, `updated_at` columns for `User` model.
 
 <br/>
 
@@ -40,7 +28,7 @@ Mr.Sample decided to NOT use `created_at`, `updated_at` columns for `User` model
 ```sh
 $ qujila sync ${DB_URL}
 ```
-Then, you can emit `up.sql` and `down.sql` by `--emit-sql` flag：
+Then, you can put `--emit-sql` flag to emit `up.sql` and `down.sql` into your migration directory：
 ```sh
 $ qujila sync ${DB_URL} --emit-sql ${migration_directory_path}
 ```
@@ -85,10 +73,7 @@ use ohkami::{
     prelude::*,
     request::RequestBody,
 };
-use crate::schema::{
-    table::users,
-    model::User,
-};
+use crate::schema::User;
 
 
 #[RequestBody(JSON)]
@@ -105,27 +90,23 @@ async fn create_user(c: Context,
         name, password, profile
     } = payload;
 
-    // or
-    struct User {
-        id, name, password, profile
-    }
-    if users(|u|
+    if User(|u|
         u.name.eq(&name) &
         u.password.eq(hash_func(&password))
     ).exists().await? {
         c.InternalServerError("user already exists")
     } else {
-        let new_user = users.Create()
-            .name(name)
-            .password(hash_func(&password))
-            .profile(profile)
-            .await?;
+        let new_user = User::Create{
+            name,
+            password: hash_func(&password),
+            profile,
+        }.await?;
         c.Created(new_user)
     }
 }
 
 async fn get_user(c: Context, id: usize) -> Response<User> {
-    let user = users(|u| u.id.eq(id)).Single().await?;
+    let user = User(|u| u.id.eq(id)).Single().await?;
     c.json(user)
 }
 
@@ -140,11 +121,9 @@ async fn update_user(c: Context
     (id,): (usize,),
     payload: UpdateUserRequest,
 ) -> Response<()> {
-    let target = users(|u| u.id.eq(id));
+    let target = User(|u| u.id.eq(id));
 
-    if ! target.is_single() {
-        c.InternalServerError("user is not single")
-    } else {
+    if target.is_single() {
         let updater = target.update();
         if let Some(new_name) = payload.name {
             updater.set_name(new_name)
@@ -156,19 +135,20 @@ async fn update_user(c: Context
             updater.set_profile(new_profile)
         }
         updater.await?;
-
         c.NoContent()
+    } else {
+        c.InternalServerError("user not single")
     }
 }
 
 async fn delete_user(c: Context, id: usize) -> Response<()> {
-    let target = users(|u| u.id.eq(id));
+    let target = User(|u| u.id.eq(id));
     
-    if ! target.is_single().await? {
-        c.InternalServerError("user not single")
-    } else {
+    if target.is_single().await? {
         target.delete().await?;
         c.NoContent()
+    } else {
+        c.InternalServerError("user not single")
     }
 }
 ```
