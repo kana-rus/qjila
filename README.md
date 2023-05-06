@@ -96,11 +96,11 @@ async fn create_user(c: Context,
     ).exists().await? {
         c.InternalServerError("user already exists")
     } else {
-        let new_user = User::Create{
-            name,
-            password: hash_func(&password),
-            profile,
-        }.await?;
+        let new_user = User::Create()
+            .name(name)
+            .password(hash_func(&password))
+            .profile(profile),
+            .await?;
         c.Created(new_user)
     }
 }
