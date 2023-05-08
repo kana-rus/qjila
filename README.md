@@ -96,19 +96,34 @@ async fn create_user(c: Context,
     ).exists().await? {
         c.InternalServerError("user already exists")
     } else {
-        let new_user = User::Create()
+        let new_user = User::created()
             .name(name)
             .password(hash_func(&password))
-            .profile(profile),
+            .profile(profile)
             .await?;
         c.Created(new_user)
+
+        <!--
+        let new_user_id = User::created_(|u| u.id)
+            .name(name)
+            .password(hash_func(&password))
+            .profile(profile)
+            .await?;
+        c.Created(new_user)
+        -->
     }
 }
 
 async fn get_user(c: Context, id: usize) -> Response<User> {
-    let user = User(|u| u.id.eq(id)).Single().await?;
+    let user = User(|u| u.id.eq(id)).single().await?;
     c.json(user)
 }
+<!--
+async fn get_user_profile(c: Context, id: usize) -> Response<User> {
+    let profile = User(|u| u.id.eq(id)).single_(|u| u.profile).await?;
+    c.json(f!({"profile": profile}))
+}
+-->
 
 #[RequestBody(JSON)]
 struct UpdateUserRequest {
@@ -123,15 +138,15 @@ async fn update_user(c: Context
 ) -> Response<()> {
     let target = User(|u| u.id.eq(id));
 
-    if target.is_single() {
+    if target.count().await? == 1 {
         let updater = target.update();
-        if let Some(new_name) = payload.name {
+        if let Some(new_name) = &payload.name {
             updater.set_name(new_name)
         }
-        if let Some(new_password) = payload.password {
+        if let Some(new_password) = &payload.password {
             updater.set_password(hash_func(new_password))
         }
-        if let Some(new_profile) = payload.profile {
+        if let Some(new_profile) = &payload.profile {
             updater.set_profile(new_profile)
         }
         updater.await?;
@@ -144,7 +159,7 @@ async fn update_user(c: Context
 async fn delete_user(c: Context, id: usize) -> Response<()> {
     let target = User(|u| u.id.eq(id));
     
-    if target.is_single().await? {
+    if target.count().await? == 1 {
         target.delete().await?;
         c.NoContent()
     } else {
@@ -158,6 +173,7 @@ async fn delete_user(c: Context, id: usize) -> Response<()> {
 ## TODOs
 - **top priority**: support **relations**
 - **second priority**: parameterize conditions
+- support **SELECT**
 - support **JOIN**
 - support **TRANSACTION**
 

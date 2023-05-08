@@ -68,18 +68,19 @@ mod query;
 mod db_type;
 mod condition;
 
-mod table;
 mod model;
-
 mod pool;
 
 
-/*===== in-module public reexprt =====*/
+/*===== in-crate reexport =====*/
 pub(crate) use pool::pool;
 
 
 /*===== public reexport =====*/
 pub use error::Error;
 pub use pool::spawn;
-pub use model::{Model, FromRow};
-pub use table::Table;
+pub use model::Model;
+
+
+/*===== external reexport =====*/
+pub use sqlx::{FromRow};
