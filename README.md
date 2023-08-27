@@ -5,19 +5,20 @@
 # Working Draft for **qujila** DB library ( any codes here don't run now )
 
 ## Example; How to Use
-1. Define schema in `src/schema.rs` using `qujila::schema!` macro. This will be editor-completable to some extent (by idea of **wrapping macro_rules**).
+1. Define tbales with `qujila::table` attribute and `qujila::column`.
 
-`src/schema.rs`
+`src/my_db_schema.rs`
 ```rust
-qujila::schema! {
-    User {
-        id:         __ID__,
-        name:       VARCHAR(20) where NOT_NULL,
-        password:   VARCHAR(20) where NOT_NULL,
-        profile:    TEXT,
-        created_at: __CREATED_AT__,
-        updated_at: __UPDATED_AT__,
-    }
+use qujila::{table, column};
+
+#[table]
+pub struct User {
+    pub id:         column::__ID_SERIAL__,
+    pub name:       column::VARCHAR::<16>,
+    pub password:   column::VARCHAR::<128>,
+    pub profile:    column::VARCHAR::<256>,
+    pub created_at: column::__CREATED_AT__,
+    pub updated_at: column::__UPDATED_AT__,
 }
 ```
 
@@ -26,11 +27,11 @@ qujila::schema! {
 2. Execute migration by `qujila sync` at the top of the project. `qujila` command will be installable by `cargo install qujila-cli`.
 
 ```sh
-$ qujila sync ${DB_URL}
+$ qujila sync my_db_schema ${DB_URL}
 ```
 Then, you can put `--emit-sql` flag to emit `up.sql` and `down.sql` into your migration directory：
 ```sh
-$ qujila sync ${DB_URL} --emit-sql ${migration_directory_path}
+$ qujila sync my_db_schema ${DB_URL} --emit-sql ${migration_directory_path}
 ```
 
 <br/>
@@ -51,32 +52,29 @@ use crate::handler::{
 
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() {
     qujila::spawn("DB_URL")
         .max_connections(1024)
         .await?;
 
-    Ohkami::new([
+    Ohkami::new((
         "api/users"
             .POST(create_user),
         "api/users/:id"
             .GET(get_user)
             .PATCH(update_user)
             .DELETE(delete_user),
-    ]).howl(":3000").await
+    )).howl(":3000").await
 }
 ```
 
 `src/handler/users.rs`
 ```rust
-use ohkami::{
-    prelude::*,
-    request::RequestBody,
-};
-use crate::schema::User;
+use ohkami::{prelude::*, utils::Payload};
+use crate::my_db_schema::{User};
 
-
-#[RequestBody(JSON)]
+#[Payload(JSON)]
+#[derive(serde::Deserialize)]
 struct CreateUserRequest {
     name:     String,
     password: String,
@@ -85,16 +83,14 @@ struct CreateUserRequest {
 
 async fn create_user(c: Context,
     payload: CreateUserRequest
-) -> Response<User> {
-    let CreateUserRequest {
-        name, password, profile
-    } = payload;
+) -> Response {
+    let CreateUserRequest { name, password, profile } = payload;
 
     if User(|u|
         u.name.eq(&name) &
         u.password.eq(hash_func(&password))
     ).exists().await? {
-        c.InternalServerError("user already exists")
+        c.InternalServerError().text("user already exists")
     } else {
         let new_user = User::created()
             .name(name)
