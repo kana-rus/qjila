@@ -9,16 +9,22 @@
 
 `src/my_db_schema.rs`
 ```rust
-use qujila::{table, column};
+use qujila::{table, c};
 
-#[table]
-pub struct User {
-    pub id:         column::__ID_SERIAL__,
-    pub name:       column::VARCHAR::<16>,
-    pub password:   column::VARCHAR::<128>,
-    pub profile:    column::VARCHAR::<256>,
-    pub created_at: column::__CREATED_AT__,
-    pub updated_at: column::__UPDATED_AT__,
+#[table] struct User {
+    id:         c::usize::<{c().auto_increment()}>,
+    name:       c::String,
+    password:   c::String,
+    profile:    c::String,
+    created_at: c::DateTime::<{c().default(now())}>,
+    updated_at: c::DateTime::<{c()./* ... */}>,
+}
+
+#[table] struct Task {
+    id:          c::usize::<{c().auto_increment()}>,
+    user:        c::table::<User /* , {c().some_constraint()} */>,
+    title:       c::String,
+    description: c::String,
 }
 ```
 
@@ -36,7 +42,7 @@ $ qujila sync my_db_schema ${DB_URL} --emit-sql ${migration_directory_path}
 
 <br/>
 
-3. `qujila::schema!` will automatically generate ORM codes. Use them in the project.
+3. `#[table]` will automatically generate ORM codes. Use them in the project.
 
 Here Mr.Sample uses `ohkami` on `tokio`：
 
@@ -50,10 +56,9 @@ use crate::handler::{
     users::*,
 };
 
-
 #[tokio::main]
 async fn main() {
-    qujila::spawn("DB_URL")
+    qujila::connect("DB_URL")
         .max_connections(1024)
         .await?;
 
@@ -81,47 +86,31 @@ struct CreateUserRequest {
     profile:  String,
 }
 
-async fn create_user(c: Context,
-    payload: CreateUserRequest
-) -> Response {
+async fn create_user(c: Context, payload: CreateUserRequest) -> Response {
     let CreateUserRequest { name, password, profile } = payload;
 
     if User(|u|
         u.name.eq(&name) &
         u.password.eq(hash_func(&password))
     ).exists().await? {
-        c.InternalServerError().text("user already exists")
-    } else {
-        let new_user = User::created()
-            .name(name)
-            .password(hash_func(&password))
-            .profile(profile)
-            .await?;
-        c.Created(new_user)
-
-        <!--
-        let new_user_id = User::created_(|u| u.id)
-            .name(name)
-            .password(hash_func(&password))
-            .profile(profile)
-            .await?;
-        c.Created(new_user)
-        -->
+        return c.InternalServerError().text("user already exists")
     }
+
+    let new_user = User::created()
+        .name(name)
+        .password(hash_func(&password))
+        .profile(profile)
+        .await?;
+    c.Created(new_user)
 }
 
-async fn get_user(c: Context, id: usize) -> Response<User> {
+async fn get_user(c: Context, id: usize) -> Response {
     let user = User(|u| u.id.eq(id)).single().await?;
-    c.json(user)
+    c.OK().json(user)
 }
-<!--
-async fn get_user_profile(c: Context, id: usize) -> Response<User> {
-    let profile = User(|u| u.id.eq(id)).single_(|u| u.profile).await?;
-    c.json(f!({"profile": profile}))
-}
--->
 
-#[RequestBody(JSON)]
+#[Payload(JSON)]
+#[derive(serde::Deserialize)]
 struct UpdateUserRequest {
     name:     Option<String>,
     password: Option<String>,
@@ -131,36 +120,36 @@ struct UpdateUserRequest {
 async fn update_user(c: Context
     (id,): (usize,),
     payload: UpdateUserRequest,
-) -> Response<()> {
+) -> Response {
     let target = User(|u| u.id.eq(id));
 
-    if target.count().await? == 1 {
-        let updater = target.update();
-        if let Some(new_name) = &payload.name {
-            updater.set_name(new_name)
-        }
-        if let Some(new_password) = &payload.password {
-            updater.set_password(hash_func(new_password))
-        }
-        if let Some(new_profile) = &payload.profile {
-            updater.set_profile(new_profile)
-        }
-        updater.await?;
-        c.NoContent()
-    } else {
-        c.InternalServerError("user not single")
+    if target.count().await? != 1 {
+        return c.InternalServerError().text("user is not single")
     }
+
+    let updater = target.update();
+    if let Some(new_name) = &payload.name {
+        updater.set_name(new_name)
+    }
+    if let Some(new_password) = &payload.password {
+        updater.set_password(hash_func(new_password))
+    }
+    if let Some(new_profile) = &payload.profile {
+        updater.set_profile(new_profile)
+    }
+    updater.await?;
+    c.NoContent()
 }
 
-async fn delete_user(c: Context, id: usize) -> Response<()> {
+async fn delete_user(c: Context, id: usize) -> Response {
     let target = User(|u| u.id.eq(id));
     
-    if target.count().await? == 1 {
-        target.delete().await?;
-        c.NoContent()
-    } else {
-        c.InternalServerError("user not single")
+    if target.count().await? != 1 {
+        return c.InternalServerError().text("user is not single")
     }
+
+    target.delete().await?;
+    c.NoContent()
 }
 ```
 

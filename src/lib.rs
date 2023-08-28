@@ -1,13 +1,15 @@
-const fn c() -> usize {42}
+#![allow(non_camel_case_types)]
+use std::marker::PhantomData;
 
-const fn f(i: usize) -> usize {
-    i.pow(10).rem_euclid(31)
+
+pub trait DBValue {}
+
+pub mod c {
+    pub struct String; impl super::DBValue for String {}
+    pub struct usize; impl super::DBValue for usize {}
+    pub struct DateTime; impl super::DBValue for DateTime {}
 }
 
-struct T1<const C: usize = 42>;
-struct T2<const C: usize = 42>;
-struct T3<const C: usize = 42>;
+pub struct Constraints<V: DBValue>(PhantomData<fn()->V>);
 
-struct Table {
-    id: T1::<{c()}>,
-}
+pub fn c<V: DBValue>() -> Constraints<V> {Constraints(PhantomData)}
