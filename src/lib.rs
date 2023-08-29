@@ -1,15 +1,33 @@
 #![allow(non_camel_case_types)]
-use std::marker::PhantomData;
 
+#![allow(incomplete_features)]
+#![feature(adt_const_params)]
 
-pub trait DBValue {}
+use std::marker::{PhantomData};
+
 
 pub mod c {
-    pub struct String; impl super::DBValue for String {}
-    pub struct usize; impl super::DBValue for usize {}
-    pub struct DateTime; impl super::DBValue for DateTime {}
+    pub struct String  <const C: super::Constraints<{super::DBType::String}>   = {super::c()}>;
+    pub struct usize   <const C: super::Constraints<{super::DBType::usize}>    = {super::c()}>;
+    pub struct DateTime<const C: super::Constraints<{super::DBType::DateTime}> = {super::c()}>;
 }
 
-pub struct Constraints<V: DBValue>(PhantomData<fn()->V>);
+#[derive(::std::marker::ConstParamTy, PartialEq, Eq)]
+pub enum DBType { String, usize, DateTime }
 
-pub fn c<V: DBValue>() -> Constraints<V> {Constraints(PhantomData)}
+#[derive(::std::marker::ConstParamTy, PartialEq, Eq)]
+pub struct Constraints<const T: DBType>;
+impl Constraints<{DBType::usize}> {
+    const fn increment(self) -> Self {self}
+}
+
+pub const fn c<const T: DBType>() -> Constraints<T> {Constraints}
+
+
+
+
+#[cfg(test)] fn __main() {
+    struct User {
+        id: c::usize::<{c().increment()}>,
+    }
+}

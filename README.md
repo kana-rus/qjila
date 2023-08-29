@@ -9,22 +9,24 @@
 
 `src/my_db_schema.rs`
 ```rust
-use qujila::{table, c};
+qujila::schema! {
+    mod User {
+        let id          = DB::usize.auto_increment();
+        let name        = DB::String;
+        let password    = DB::String;
+        let profile     = DB::String;
+        let created_at  = DB::DateTime.default_now();
+        let updated_at  = DB::DateTime. /* ... */;
+    }
 
-#[table] struct User {
-    id:         c::usize::<{c().auto_increment()}>,
-    name:       c::String,
-    password:   c::String,
-    profile:    c::String,
-    created_at: c::DateTime::<{c().default(now())}>,
-    updated_at: c::DateTime::<{c()./* ... */}>,
-}
-
-#[table] struct Task {
-    id:          c::usize::<{c().auto_increment()}>,
-    user:        c::table::<User /* , {c().some_constraint()} */>,
-    title:       c::String,
-    description: c::String,
+    mod Task {
+        let id          = DB::usize.auto_increment();
+        let user_id     = DB::usize.references::<User, "id">();
+        let title       = DB::String;
+        let description = DB::String;
+        let created_at  = DB::DateTime.default_now();
+        let updated_at  = DB::DateTime. /* ... */;
+    }
 }
 ```
 
@@ -42,7 +44,7 @@ $ qujila sync my_db_schema ${DB_URL} --emit-sql ${migration_directory_path}
 
 <br/>
 
-3. `#[table]` will automatically generate ORM codes. Use them in the project.
+3. `qujila::schema!` will automatically generate ORM codes. Use them in the project.
 
 Here Mr.Sample uses `ohkami` on `tokio`：
 
