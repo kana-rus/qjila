@@ -11,21 +11,21 @@
 ```rust
 qujila::schema! {
     mod User {
-        let id          = DB::usize.auto_increment();
-        let name        = DB::String;
-        let password    = DB::String;
-        let profile     = DB::String;
-        let created_at  = DB::DateTime.default_now();
-        let updated_at  = DB::DateTime. /* ... */;
+        let id          = usize.auto_increment();
+        let name        = String;
+        let password    = String;
+        let profile     = String;
+        let created_at  = DateTime.default_now();
+        let updated_at  = DateTime. /* ... */;
     }
 
     mod Task {
-        let id          = DB::usize.auto_increment();
-        let user_id     = DB::usize.references::<User, "id">();
-        let title       = DB::String;
-        let description = DB::String;
-        let created_at  = DB::DateTime.default_now();
-        let updated_at  = DB::DateTime. /* ... */;
+        let id          = usize.auto_increment();
+        let user_id     = usize.references::<User, "id">();
+        let title       = String;
+        let description = String;
+        let created_at  = DateTime.default_now();
+        let updated_at  = DateTime. /* ... */;
     }
 }
 ```
