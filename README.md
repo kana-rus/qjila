@@ -29,6 +29,27 @@ qujila::schema! {
     }
 }
 ```
+```rust
+qujila::schema! {
+    mod User {
+        fn id()          {usize.auto_increment()}
+        fn name()        {String}
+        fn password()    {String}
+        fn profile()     {String}
+        fn created_at()  {DateTime.default_now()}
+        fn updated_at()  {DateTime. /* ... */}
+    }
+
+    mod Task {
+        fn id()          {usize.auto_increment()}
+        fn user_id()     {usize.references::<User, "id">()}
+        fn title()       {String}
+        fn description() {String}
+        fn created_at()  {DateTime.default_now()}
+        fn updated_at()  {DateTime. /* ... */}
+    }
+}
+```
 
 <br/>
 

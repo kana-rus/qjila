@@ -1,3 +1,6 @@
+mod model;
+mod expand;
+
 use proc_macro2::TokenStream;
 use syn::Result;
 
