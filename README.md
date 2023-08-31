@@ -86,10 +86,6 @@ use crate::handler::{
 
 #[tokio::main]
 async fn main() {
-    qujila::connect("DB_URL")
-        .max_connections(1024)
-        .await?;
-
     Ohkami::new((
         "api/users"
             .POST(create_user),
