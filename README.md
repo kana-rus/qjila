@@ -15,9 +15,9 @@ $ cargo install qujila-cli
 
 <br/>
 
-1. Define your DB schema in .primsa file :
+1. Define your DB schema in `.primsa` file :
 
-`my_db_schema.prisma`
+`schema.prisma`
 ```prisma
 generator client {
     provider = "qujila"
@@ -62,7 +62,15 @@ $ qujila sync
 You can emit migration history as SQL files by `--emit-sql` flag :
 
 ```sh
-$ qujila sync --emit-sql my_migrations_directory_path
+$ qujila sync --emit-sql my_migrations_dir
+```
+
+In production, execute these migration files :
+
+```sh
+$ qujila migrate my_migrations_dir
+# This executes all .sql files (in expected format)
+# including ones you manually added
 ```
 
 <br/>
