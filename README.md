@@ -59,16 +59,10 @@ model Post {
 $ qujila sync
 ```
 
-You can emit migration history as SQL files by `--emit-sql` flag :
+This outputs migration history as SQL files. In production, execute these migration files :
 
 ```sh
-$ qujila sync --emit-sql my_migrations_dir
-```
-
-In production, execute these migration files :
-
-```sh
-$ qujila migrate my_migrations_dir
+$ qujila migrate
 # This executes any .sql files (in expected format)
 # after already executed;
 # including ones you manually added
