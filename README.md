@@ -36,7 +36,7 @@ model User {
     name       String
     password   String
     profile    String?
-    created_at DateTime @ default(now())
+    created_at DateTime @default(now())
     posts      Post[]
 }
 
