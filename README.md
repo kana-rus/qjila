@@ -69,7 +69,8 @@ In production, execute these migration files :
 
 ```sh
 $ qujila migrate my_migrations_dir
-# This executes all .sql files (in expected format)
+# This executes any .sql files (in expected format)
+# after already executed;
 # including ones you manually added
 ```
 
