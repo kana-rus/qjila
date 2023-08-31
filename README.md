@@ -35,6 +35,7 @@ model User {
     id         Int      @id @default(autoincrement())
     name       String
     password   String
+    profile    String?
 }
 
 model Post {
