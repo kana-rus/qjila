@@ -5,67 +5,70 @@
 # Working Draft for **qujila** DB library ( any codes here don't run now )
 
 ## Example; How to Use
-1. Define tbales with `qujila::table` attribute and `qujila::column`.
 
-`src/my_db_schema.rs`
-```rust
-qujila::schema! {
-    mod User {
-        let id          = usize.auto_increment();
-        let name        = String;
-        let password    = String;
-        let profile     = String;
-        let created_at  = DateTime.default_now();
-        let updated_at  = DateTime. /* ... */;
-    }
+0. Add to `dependencies` and install cli :
 
-    mod Task {
-        let id          = usize.auto_increment();
-        let user_id     = usize.references::<User, "id">();
-        let title       = String;
-        let description = String;
-        let created_at  = DateTime.default_now();
-        let updated_at  = DateTime. /* ... */;
-    }
-}
+```sh
+$ cargo add qujila
+$ cargo install qujila-cli
 ```
-```rust
-qujila::schema! {
-    mod User {
-        fn id()          {usize.auto_increment()}
-        fn name()        {String}
-        fn password()    {String}
-        fn profile()     {String}
-        fn created_at()  {DateTime.default_now()}
-        fn updated_at()  {DateTime. /* ... */}
-    }
 
-    mod Task {
-        fn id()          {usize.auto_increment()}
-        fn user_id()     {usize.references::<User, "id">()}
-        fn title()       {String}
-        fn description() {String}
-        fn created_at()  {DateTime.default_now()}
-        fn updated_at()  {DateTime. /* ... */}
-    }
+<br/>
+
+1. Define your DB schema in Primsa :
+
+`my_db_schema.prisma`
+```prisma
+generator client {
+    provider = "qujila"
+    output   = "src/my_db_schema"
+}
+
+datasource db {
+    provider = "postgres"
+    url      = env("DATABASE_URL")
+}
+
+# `cargo add chrono` to use DateTime
+
+model User {
+    id         Int      @id @default(autoincrement())
+    name       String
+    password   String
+<br/>
+
+## TODOs
+- **top priority**: support **relations**
+- **second priority**: parameterize conditions
+- support **SELECT**
+- support **JOIN**
+- support **TRANSACTION**
+    created_at DateTime @default(now())
+    posts      Post[]
+}
+
+model Post {
+    id         Int      @id @default(autoincrement())
+    title      String
+    content    String
+    published  Boolean  @default(false)
+    auther     User     @relation(fields: [auther_id], references: [id])
+    auther_id  Int
 }
 ```
 
 <br/>
 
-2. Execute migration by `qujila sync` at the top of the project. `qujila` command will be installable by `cargo install qujila-cli`.
+2. Generate client code and execute migration :
 
 ```sh
-$ qujila sync my_db_schema ${DB_URL}
-```
-Then, you can put `--emit-sql` flag to emit `up.sql` and `down.sql` into your migration directory：
-```sh
-$ qujila sync my_db_schema ${DB_URL} --emit-sql ${migration_directory_path}
+$ qujila sync
+# migration files are emitted in directory named as the .prisma file (e.g. `my_db_schema` in this case)
 ```
 
 <br/>
 
-3. `qujila::schema!` will automatically generate ORM codes. Use them in the project.
+3. Use client code in your project.
 
 Here Mr.Sample uses `ohkami` on `tokio`：
 
@@ -175,15 +178,6 @@ async fn delete_user(c: Context, id: usize) -> Response {
     c.NoContent()
 }
 ```
-
-<br/>
-
-## TODOs
-- **top priority**: support **relations**
-- **second priority**: parameterize conditions
-- support **SELECT**
-- support **JOIN**
-- support **TRANSACTION**
 
 <br/>
 
