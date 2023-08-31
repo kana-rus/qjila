@@ -53,7 +53,8 @@ model Post {
 
 ```sh
 $ qujila sync
-# migration files are emitted in directory named as the .prisma file (e.g. `my_db_schema` in this case)
+# migration files are emitted in directory named as the .prisma file
+# (e.g. `my_db_schema` in this case)
 ```
 
 <br/>
