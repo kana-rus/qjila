@@ -35,16 +35,6 @@ model User {
     id         Int      @id @default(autoincrement())
     name       String
     password   String
-<br/>
-
-## TODOs
-- **top priority**: support **relations**
-- **second priority**: parameterize conditions
-- support **SELECT**
-- support **JOIN**
-- support **TRANSACTION**
-    created_at DateTime @default(now())
-    posts      Post[]
 }
 
 model Post {
