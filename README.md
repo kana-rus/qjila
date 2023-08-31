@@ -15,7 +15,7 @@ $ cargo install qujila-cli
 
 <br/>
 
-1. Define your DB schema in Primsa :
+1. Define your DB schema in .primsa file :
 
 `my_db_schema.prisma`
 ```prisma
