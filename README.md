@@ -36,7 +36,7 @@ model User {
     name       String
     password   String
     profile    String?
-    created_at DateTime
+    created_at DateTime @ default(now())
     posts      Post[]
 }
 
@@ -47,6 +47,7 @@ model Post {
     published  Boolean  @default(false)
     auther     User     @relation(fields: [auther_id], references: [id])
     auther_id  Int
+    created_at DateTime @default(now())
 }
 ```
 
