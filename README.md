@@ -62,10 +62,7 @@ $ qujila sync
 You can emit migration history as SQL files by `--emit-sql` flag :
 
 ```sh
-$ qujila sync --emit-sql
-# migration files are emitted in directory named as
-#     `${ .prisma file name }.migrations`
-# (e.g. `my_db_schema.migrations` in this case)
+$ qujila sync --emit-sql my_migrations_directory_path
 ```
 
 <br/>
