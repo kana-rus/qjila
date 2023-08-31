@@ -36,6 +36,8 @@ model User {
     name       String
     password   String
     profile    String?
+    created_at DateTime
+    posts      Post[]
 }
 
 model Post {
