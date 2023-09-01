@@ -15,13 +15,13 @@ $ cargo install qujila-cli
 
 <br/>
 
-1. Define your DB schema in `.primsa` file :
+1. Define your DB schema in `db_name/schema.primsa` file :
 
-`schema.prisma`
+`db_name/schema.prisma`
 ```prisma
 generator client {
     provider = "qujila"
-    output   = "src/my_db_schema"
+    output   = "../src/my_db_module"
 }
 
 datasource db {
@@ -29,7 +29,7 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-# `cargo add chrono` to use DateTime
+// `cargo add chrono` to use DateTime
 
 model User {
     id         Int      @id @default(autoincrement())
@@ -59,12 +59,11 @@ model Post {
 $ qujila sync
 ```
 
-This outputs migration history as SQL files. In production, execute these migration files :
+This outputs migration history as SQL files in `db_name/migrations/`. In production, execute these migration files :
 
 ```sh
 $ qujila migrate
-# This executes any .sql files (in expected format)
-# after already executed;
+# This executes any migration files after already executed
 # including ones you manually added
 ```
 
@@ -77,7 +76,7 @@ Here Mr.Sample uses `ohkami` on `tokio`：
 `src/main.rs`
 ```rust
 mod handler;
-mod schema;
+mod my_db_module;
 
 use ohkami::prelude::*;
 use crate::handler::{
@@ -100,7 +99,7 @@ async fn main() {
 `src/handler/users.rs`
 ```rust
 use ohkami::{prelude::*, utils::Payload};
-use crate::my_db_schema::{User};
+use crate::my_db_module::{User};
 
 #[Payload(JSON)]
 #[derive(serde::Deserialize)]
@@ -151,17 +150,12 @@ async fn update_user(c: Context
         return c.InternalServerError().text("user is not single")
     }
 
-    let updater = target.update();
-    if let Some(new_name) = &payload.name {
-        updater.set_name(new_name)
-    }
-    if let Some(new_password) = &payload.password {
-        updater.set_password(hash_func(new_password))
-    }
-    if let Some(new_profile) = &payload.profile {
-        updater.set_profile(new_profile)
-    }
-    updater.await?;
+    target.update()
+        .name(payload.name)
+        .password(hash_func(&payload.password))
+        .profile(payload.profile)
+        .await?;
+    
     c.NoContent()
 }
 
