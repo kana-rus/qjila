@@ -7,6 +7,7 @@ pub(crate) struct Schema {
     datasource: DataSource,
     generator:  GeneratorClient,
     models:     Vec<Model>,
+    enums:      Vec<Enum>,
 }
 
 struct DataSource {
@@ -18,6 +19,11 @@ enum Provider { postgresql, mysql, sqlite }
 
 struct GeneratorClient {
     output: Option<String>,
+}
+
+struct Enum {
+    name:     String,
+    variants: Vec<String>,
 }
 
 struct Model {
