@@ -23,10 +23,10 @@ impl Parser {
         let     add_idx  = n_bytes.min(remained.len());
         let mut add_line = 0;
 
-        let mut is_eol = false;
+        let mut was_eol = false;
         for b in &remained[..add_idx] {
-            if is_eol {add_line += 1}
-            is_eol = &b'\n' == b
+            if was_eol {add_line += 1}
+            was_eol = &b'\n' == b
         }
 
         self.current_idx  += add_idx;
