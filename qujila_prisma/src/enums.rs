@@ -1,4 +1,4 @@
 pub struct Enum {
-    name:     String,
-    variants: Vec<String>,
+    pub name:     String,
+    pub variants: Vec<String>,
 }

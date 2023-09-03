@@ -8,6 +8,18 @@ mod enums;
 mod date_time;
 mod bytes;
 
+pub mod field_type {
+    pub use super::string::*;
+    pub use super::boolean::*;
+    pub use super::int::*;
+    pub use super::big_int::*;
+    pub use super::float::*;
+    pub use super::decimal::*;
+    pub use super::enums::*;
+    pub use super::date_time::*;
+    pub use super::bytes::*;
+}
+
 
 pub struct Model {
     pub name:    String,

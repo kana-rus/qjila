@@ -1,13 +1,13 @@
 pub struct BigIntField {
-    default: Option<i64>,
+    pub default: Option<BigIntValue>,
 }
 
 pub struct BigIntListField {
-    default: Option<Vec<i64>>,
+    pub default: Option<Vec<BigIntValue>>,
 }
 
 pub struct BigIntOptionalField {
-    default: Option<i64>,
+    pub default: Option<BigIntValue>,
 }
 
 pub enum BigIntValue {

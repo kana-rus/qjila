@@ -1,13 +1,13 @@
 pub struct DateTimeField {
-    default: Option<DateTimeValue>
+    pub default: Option<DateTimeValue>
 }
 
 pub struct DateTimeListField {
-    default: Option<Vec<DateTimeValue>>,
+    pub default: Option<Vec<DateTimeValue>>,
 }
 
 pub struct DateTimeOptionalField {
-    default: Option<DateTimeValue>,
+    pub default: Option<DateTimeValue>,
 }
 
 pub enum DateTimeValue {
