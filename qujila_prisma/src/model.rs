@@ -6,28 +6,27 @@ mod float;
 mod decimal;
 mod enums;
 mod date_time;
-mod json;
 mod bytes;
-mod relation;
 
 
 pub struct Model {
-    name:    String,
-    fields:  Vec<Field>,
+    pub name:    String,
+    pub fields:  Vec<Field>,
 
-    map:     Option<String>,
-    ids:     Vec<Vec<String>>,
-    uniques: Vec<Vec<String>>,
-    indexes: Vec<Vec<String>>,
+    pub map:     Option<String>,
+    pub ids:     Vec<Vec<String>>,
+    pub uniques: Vec<Vec<String>>,
+    pub indexes: Vec<Vec<String>>,
 }
 
 pub struct Field {
-    name:          String,
-    schema:        FieldSchema,
+    pub name:          String,
+    pub schema:        FieldSchema,
 
-    map:           Option<String>,
-    id:            Option<()>,
-    unique:        Option<()>,
+    pub map:           Option<String>,
+    pub id:            Option<()>,
+    pub unique:        Option<()>,
+    pub relation:      Option<Relation>,
 }
 
 pub enum FieldSchema {
@@ -55,30 +54,25 @@ pub enum FieldSchema {
     DecimalList     (decimal::DecimalListField),
     DecimalOptional (decimal::DecimalOptionalField),
 
-    Enum            (EnumField),
-    EnumList        (EnumListField),
-    EnumOptional    (EnumOptionalField),
+    Enum            (enums::EnumField),
+    EnumList        (enums::EnumListField),
+    EnumOptional    (enums::EnumOptionalField),
 
-    DateTime        (DateTimeField),
-    DateTimeList    (DateTimeListField),
-    DateTimeOptional(DateTimeOptionalField),
+    DateTime        (date_time::DateTimeField),
+    DateTimeList    (date_time::DateTimeListField),
+    DateTimeOptional(date_time::DateTimeOptionalField),
 
-    Bytes           (BytesField),
-    BytesList       (BytesListField),
-    BytesOptional   (BytesOptionalField),
+    Bytes           (bytes::BytesField),
+    BytesList       (bytes::BytesListField),
+    BytesOptional   (bytes::BytesOptionalField),
+
+    Model           { model_name: String, relation: Option<Relation> },
+    ModelList       { model_name: String, relation: Option<Relation> },
+    ModelOptional   { model_name: String, relation: Option<Relation> },
     
-    Json            (JsonField),
-
-    Relation        (Relation),
+    Json,
 }
-
-
-
-struct JsonField  {}
-struct BytesField {
-    default: Option<String>,
+pub struct Relation {
+    pub fields:     Vec<String>,
+    pub references: Vec<String>,
 }
-struct EnumField {
-    default: Option<String>,
-}
-
