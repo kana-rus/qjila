@@ -45,7 +45,7 @@ fn find_target_schema_file() -> Result</*absolute*/PathBuf, Cow<'static, str>> {
 
     let schema_prisma = read_dir(&qujila_dir)?
         .find(|f| f.is_file() && &f.file_name().unwrap().to_string_lossy() == "schema.prisma")
-        .ok_or_else(|| Cow::Borrowed("`qujila/schema` not found"))?;
+        .ok_or_else(|| Cow::Borrowed("`qujila/schema.prisma` was not found"))?;
 
     Ok(schema_prisma)
 }
