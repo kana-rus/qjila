@@ -2,7 +2,6 @@ use std::{borrow::Cow, fs, format as f};
 
 
 pub(crate) struct Reader {
-    file_path:      String,
     content:        Vec<u8>,
     current_idx:    usize,
     current_line:   usize,
@@ -12,11 +11,15 @@ pub(crate) struct Reader {
 impl Reader {
     pub fn new(path: &str) -> Result<Self, Cow<'static, str>> {
         let content = fs::read(path).map_err(|e| Cow::Owned(f!("Can't read file `{path}`: {e}")))?;
-        Ok(Self { content, file_path: f!("{path}"),
+        Ok(Self {
+            content,
             current_idx:    0,
             current_line:   1,
             current_column: 1,
         })
+    }
+    pub fn Msg(&self, message: impl AsRef<str>) -> Cow<'static, str> {
+        Cow::Owned(f!("[{}:{}] {}", self.line(), self.column(), message.as_ref()))
     }
 }
 
@@ -25,9 +28,6 @@ impl Reader {
         &self.content[self.current_idx..]
     }
 
-    #[inline(always)] pub fn file(&self) -> &str {
-        &self.file_path
-    }
     #[inline(always)] pub fn line(&self) -> &usize {
         &self.current_line
     }
@@ -44,11 +44,12 @@ impl Reader {
         let mut line   = self.current_line.clone();
         let mut column = self.current_column.clone();
 
-        let mut was_newline = false;
         for b in &remained[..add_idx] {
-            column += 1;
-            if was_newline {line += 1; column = 1}
-            was_newline = &b'\n' == b
+            if &b'\n' != b {
+                column += 1
+            } else {
+                line += 1; column = 1
+            }
         }
 
         self.current_idx += add_idx;
@@ -60,12 +61,26 @@ impl Reader {
     pub fn consume(&mut self, max_bytes: usize) {
         let _ = self.read(max_bytes);
     }
+    pub fn pop_if(&mut self, condition: impl Fn(&u8)->bool) -> Option<u8> {
+        let value = self.peek()?;
+        condition(value).then_some(*value)
+    }
+    pub fn read_while(&mut self, condition: impl Fn(&u8)->bool) -> &[u8] {
+        let mut until = 0;
+        while self.remained().get(until).is_some_and(&condition) {
+            until += 1
+        }
+        self.read(until)
+    }
 
     #[inline] pub fn peek(&self) -> Option<&u8> {
         self.remained().first()
     }
     pub fn try_peek(&self) -> Result<&u8, Cow<'static, str>> {
         self.peek().ok_or_else(|| Cow::Borrowed("Unexpectedly end of input"))
+    }
+    pub fn is_empty(&self) -> bool {
+        self.content.is_empty()
     }
 
     pub fn skip_whitespace(&mut self) {
@@ -82,12 +97,7 @@ impl Reader {
     pub fn parse_keyword(&mut self, keyword: &'static str) -> Result<(), Cow<'static, str>> {
         self.remained().starts_with(keyword.as_bytes())
             .then(|| self.consume(keyword.len()))
-            .ok_or_else(|| Cow::Owned(
-                f!("[{}:{}:{}] Expected a keyword `{keyword}` but not found",
-                &self.file_path,
-                &self.current_line,
-                &self.current_column,
-            )))
+            .ok_or_else(|| self.Msg(f!("Expected keyword `{keyword}` but not found")))
     }
     pub fn parse_oneof_keywords<const N: usize>(&mut self, keywords: [&'static str; N]) -> Result<usize, Cow<'static, str>> {
         for i in 0..keywords.len() {
@@ -96,25 +106,14 @@ impl Reader {
                 return Ok(i)
             }
         }
-        Err(Cow::Owned(f!("[{}:{}:{}] Expected oneof {} but none matched",
-            &self.file_path,
-            &self.current_line,
-            &self.current_column,
-            keywords.map(|kw| f!("`{kw}`")).join(", ")
-        )))
+        Err(self.Msg(f!("Expected oneof {} but none matched", keywords.map(|kw| f!("`{kw}`")).join(", "))))
     }
     pub fn parse_ident(&mut self) -> Result<String, Cow<'static, str>> {
         let mut ident_len = 0;
         while !self.remained()[ident_len].is_ascii_whitespace() {
             ident_len += 1
         }
-
-        if ident_len == 0 {return Err(Cow::Owned(f!(
-            "[{}:{}:{}] Expected an ident but not found",
-            &self.file_path,
-            &self.current_line,
-            &self.current_column,
-        )))}
+        if ident_len == 0 {return Err(self.Msg("Expected an ident but not found"))}
 
         self.consume(ident_len);
         Ok(unsafe { String::from_utf8_unchecked(self.remained()[..ident_len].to_vec()) })
@@ -132,27 +131,17 @@ impl Reader {
     }
     pub fn parse_positive_integer_literal(&mut self) -> Result<u64, Cow<'static, str>> {
         let mut integer = 0;
+        
         let mut degit   = 0;
-
         loop {
-            let b = self.remained().first().ok_or_else(|| Cow::Owned(f!(
-                "[{}:{}:{}] Expected an Int value but not found",
-                &self.file_path,
-                &self.current_line,
-                &self.current_column,
-            )))?;
+            let b = self.remained().first()
+                .ok_or_else(|| self.Msg("Expected an integer but not found"))?;
             match b {
                 b'0'..=b'9' => {integer = integer * 10 + (*b - b'0') as u64; degit += 1}
                 _ => break,
             }
         }
-
-        if degit == 0 {return Err(Cow::Owned(f!(
-            "[{}:{}:{}] Expected an Int value but not found",
-            &self.file_path,
-            &self.current_line,
-            &self.current_column,
-        )))}
+        if degit == 0 {return Err(self.Msg("Expected an integer but not found"))}
 
         self.consume(degit);
         Ok(integer)

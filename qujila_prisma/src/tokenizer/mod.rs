@@ -6,16 +6,19 @@ use std::{
     iter::Peekable,
     borrow::Cow,
     format as f,
-    fs,
 };
 
 
 pub type TokenStream = Peekable<Stream<(Location, Token)>>;
 
 pub struct Location {
-    pub file:   String,
     pub line:   usize,
     pub column: usize,
+} impl std::fmt::Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self { line, column } = self;
+        f.write_str(&f!("[{line}:{column}]", ))
+    }
 }
 
 pub enum Token {
@@ -37,18 +40,45 @@ pub enum Token {
     BraceClose,
     BracketOpen,
     BracketClose,
+} impl std::fmt::Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Token::Ident(name) => name,
+
+            Token::Literal(Lit::Str(s))     => &f!("\"{s}\""),
+            Token::Literal(Lit::Bool(b))    => if *b {"true"} else {"false"},
+            Token::Literal(Lit::Integer(i)) => &i.to_string(),
+            Token::Literal(Lit::Decimal(d)) => &d.to_string(),
+
+            Token::_enum       => "enum",
+            Token::_model      => "model",
+            Token::_generator  => "generator",
+            Token::_datasource => "datasource",
+
+            Token::At           => "@",
+            Token::Eq           => "=",
+            Token::Colon        => ":",
+            Token::Question     => "?",
+            Token::ParenOpen    => "(",
+            Token::ParenClose   => ")",
+            Token::BraceOpen    => "{",
+            Token::BraceClose   => "}",
+            Token::BracketOpen  => "[",
+            Token::BracketClose => "]",
+        })
+    }
 }
 
 pub enum Lit {
     Str    (String),
     Bool   (bool),
     Integer(i128),
-    Float  (f64),
+    Decimal(f64),
 }
 
 
-pub fn tokenize(file: &str) -> Result<TokenStream, Cow<'static, str>> {
-    let mut r = Reader::new(file)?;
+pub fn tokenize(file_path: &str) -> Result<TokenStream, Cow<'static, str>> {
+    let mut r = Reader::new(file_path)?;
 
     let mut tokens = Vec::new();
     loop {
@@ -56,7 +86,6 @@ pub fn tokenize(file: &str) -> Result<TokenStream, Cow<'static, str>> {
 
         let Some(b)  = r.peek() else {return Ok(tokens.into_iter().peekable())};
         let location = Location {
-            file:   r.file().to_owned(),
             line:   r.line().to_owned(),
             column: r.column().to_owned(),
         };
@@ -104,12 +133,29 @@ pub fn tokenize(file: &str) -> Result<TokenStream, Cow<'static, str>> {
             }
             b'0'..=b'9' => {
                 let integer = r.parse_integer_literal()?;
-                match r.parse_keyword(".") {
-                    Err(_) => tokens.push((location, Token::Literal(Lit::Integer(integer)))),
-                    Ok(_)  => {
-                        let fraction = r.pa;
-                    }
+                if r.parse_keyword(".").is_ok() {
+                    tokens.push((location, Token::Literal(Lit::Integer(integer))));
+                    continue
                 }
+                
+                let (not_negative, mut abs) = (integer >= 0, integer.abs() as f64);
+
+                let mut min_degit = 1.0_f64;
+                while let Some(d) = r.pop_if(|b| b.is_ascii_digit()) {
+                    min_degit /= 10.0;
+                    abs += (d as f64) / min_degit
+                }
+                if min_degit == 1.0 {
+                    return Err(Cow::Owned(f!("{location} Unexpectedly end of float literal: `{integer}.`")))
+                }
+
+                tokens.push((location, Token::Literal(Lit::Decimal(
+                    if not_negative { abs } else { - abs }
+                ))))
+            }
+            _ => {
+                let unknown_token = String::from_utf8_lossy(r.read_while(|b| !b.is_ascii_whitespace()));
+                return Err(Cow::Owned(f!("{location} Unnkown token: `{unknown_token}`")))
             }
         }
     }

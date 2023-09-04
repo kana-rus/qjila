@@ -15,9 +15,9 @@ $ cargo install qujila-cli
 
 <br/>
 
-1. Define your DB schema in `db_name/schema.primsa` file :
+1. Define your DB schema in `qujila/schema.primsa` file :
 
-`db_name/schema.prisma`
+`qujila/schema.prisma`
 ```prisma
 generator client {
     provider = "qujila"
@@ -50,6 +50,8 @@ model Post {
     created_at DateTime @default(now())
 }
 ```
+
+At now, `qujila` doesn't support using mutiple DB in one application.
 
 <br/>
 
