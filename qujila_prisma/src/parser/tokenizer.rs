@@ -1,6 +1,4 @@
-mod reader;
-
-use reader::{Reader};
+use super::reader::{Reader};
 use std::{
     vec::IntoIter as Stream,
     iter::Peekable,
@@ -10,7 +8,11 @@ use std::{
 };
 
 
-pub type TokenStream = Peekable<Stream<(Location, Token)>>;
+pub struct TokenStream(
+    Peekable<Stream<(Location, Token)>>
+); impl TokenStream {
+    pub fn 
+}
 
 pub struct Location {
     pub line:   usize,
@@ -20,16 +22,17 @@ pub struct Location {
         let Self { line, column } = self;
         f.write_str(&f!("[{line}:{column}]", ))
     }
+} impl Location {
+    pub fn Msg(&self, msg: impl AsRef<str>) -> Cow<'static, str> {
+        Cow::Owned(f!("[{self}] {}", msg.as_ref()))
+    }
 }
 
+#[derive(PartialEq)]
 pub enum Token {
     Ident  (String),
     Literal(Lit),
-    
-    _enum,
-    _model,
-    _generator,
-    _datasource,
+    Keyword(Keyword),
 
     At,
     Eq,
@@ -51,10 +54,10 @@ pub enum Token {
             Token::Literal(Lit::Integer(i)) => f.write_str(&i.to_string()),
             Token::Literal(Lit::Decimal(d)) => f.write_str(&d.to_string()),
 
-            Token::_enum       => f.write_str("enum"),
-            Token::_model      => f.write_str("model"),
-            Token::_generator  => f.write_str("generator"),
-            Token::_datasource => f.write_str("datasource"),
+            Token::Keyword(Keyword::_enum)       => f.write_str("enum"),
+            Token::Keyword(Keyword::_model)      => f.write_str("model"),
+            Token::Keyword(Keyword::_generator)  => f.write_str("generator"),
+            Token::Keyword(Keyword::_datasource) => f.write_str("datasource"),
 
             Token::At           => f.write_str("@"),
             Token::Eq           => f.write_str("="),
@@ -70,11 +73,20 @@ pub enum Token {
     }
 }
 
+#[derive(PartialEq)]
 pub enum Lit {
     Str    (String),
     Bool   (bool),
     Integer(i128),
     Decimal(f64),
+}
+
+#[derive(PartialEq)]
+pub enum Keyword {
+    _enum,
+    _model,
+    _generator,
+    _datasource,
 }
 
 
@@ -88,7 +100,7 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
         let location = Location { line: r.line(), column: r.column()};
         let push     = |token: Token| tokens.push((location, token));
         
-        let Some(b) = r.peek() else {return Ok(tokens.into_iter().peekable())};
+        let Some(b) = r.peek() else {return Ok(TokenStream(tokens.into_iter().peekable()))};
         match b {
             b'@' => {r.consume(1); push(Token::At)}
             b'=' => {r.consume(1); push(Token::Eq)}
@@ -101,26 +113,18 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
             b'[' => {r.consume(1); push(Token::BracketOpen)}
             b']' => {r.consume(1); push(Token::BracketClose)}
 
-            b'e' => match r.parse_keyword("enum") {
-                Ok(_)  => push(Token::_enum),
+            b'e' | b'm' | b'g' | b'd' => match r.parse_oneof_keywords(["enum", "model", "generator", "datasource"]) {
                 Err(_) => push(Token::Ident(r.parse_ident()?)),
-            }
-            b'm' => match r.parse_keyword("model") {
-                Ok(_)  => push(Token::_model),
-                Err(_) => push(Token::Ident(r.parse_ident()?)),
-            }
-            b'g' => match r.parse_keyword("generator") {
-                Ok(_)  => push(Token::_model),
-                Err(_) => push(Token::Ident(r.parse_ident()?)),
-            }
-            b'd' => match r.parse_keyword("datasource") {
-                Ok(_)  => push(Token::_model),
-                Err(_) => push(Token::Ident(r.parse_ident()?)),
+                Ok(0) => push(Token::Keyword(Keyword::_enum)),
+                Ok(1) => push(Token::Keyword(Keyword::_model)),
+                Ok(2) => push(Token::Keyword(Keyword::_generator)),
+                Ok(3) => push(Token::Keyword(Keyword::_datasource)),
             }
 
-            b't' => match r.parse_keyword("true") {
-                Ok(_)  => push(Token::Literal(Lit::Bool(true))),
+            b't' | b'f' => match r.parse_oneof_keywords(["false", "true"]) {
                 Err(_) => push(Token::Ident(r.parse_ident()?)),
+                Ok(0)  => push(Token::Literal(Lit::Bool(false))),
+                Ok(1)  => push(Token::Literal(Lit::Bool(true))),
             }
             b'f' => match r.parse_keyword("false") {
                 Ok(_)  => push(Token::Literal(Lit::Bool(false))),
