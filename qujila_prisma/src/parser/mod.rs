@@ -18,16 +18,16 @@ impl Parse for Schema {
 
         while let Some((location, t)) = ts.next() {
             match t {
-            //    Token::_generator  => {
-            //        if generator.is_some() {return Err(Cow::Owned(f!("{location} generator defined mutiple times")))}
-            //        generator.replace(GeneratorClient::parse(ts)?);
-            //    }
-            //    Token::_datasource => {
-            //        if datasource.is_some() {return Err(Cow::Owned(f!("{location} datasouce defined multiple times")))}
-            //        datasource.replace(DataSource::parse(ts)?);
-            //    }
-            //    Token::_enum  => enums .push(Enum::parse(ts)?),
-            //    Token::_model => models.push(Model::Parse(ts)?),
+                Token::_generator  => {
+                    if generator.is_some() {return Err(Cow::Owned(f!("{location} generator defined mutiple times")))}
+                    generator.replace(GeneratorClient::parse(ts)?);
+                }
+                Token::_datasource => {
+                    if datasource.is_some() {return Err(Cow::Owned(f!("{location} datasouce defined multiple times")))}
+                    datasource.replace(DataSource::parse(ts)?);
+                }
+                Token::_enum  => enums .push(Enum::parse(ts)?),
+                Token::_model => models.push(Model::Parse(ts)?),
 
                 unknown => return Err(Cow::Owned(f!("{location} Found unexpected token: `{unknown}`")))
             }
