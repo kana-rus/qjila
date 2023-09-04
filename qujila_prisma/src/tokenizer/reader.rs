@@ -1,7 +1,7 @@
 use std::{borrow::Cow, fs, format as f};
 
 
-pub(crate) struct Reader {
+pub struct Reader {
     content:        Vec<u8>,
     current_idx:    usize,
     current_line:   usize,
@@ -28,11 +28,11 @@ impl Reader {
         &self.content[self.current_idx..]
     }
 
-    #[inline(always)] pub fn line(&self) -> &usize {
-        &self.current_line
+    #[inline(always)] pub fn line(&self) -> usize {
+        self.current_line
     }
-    #[inline(always)] pub fn column(&self) -> &usize {
-        &self.current_column
+    #[inline(always)] pub fn column(&self) -> usize {
+        self.current_column
     }
 
     pub fn read(&mut self, max_bytes: usize) -> &[u8] {
@@ -131,7 +131,7 @@ impl Reader {
     }
     pub fn parse_positive_integer_literal(&mut self) -> Result<u64, Cow<'static, str>> {
         let mut integer = 0;
-        
+
         let mut degit   = 0;
         loop {
             let b = self.remained().first()
