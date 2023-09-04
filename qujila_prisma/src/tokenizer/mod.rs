@@ -4,6 +4,7 @@ use reader::{Reader};
 use std::{
     vec::IntoIter as Stream,
     iter::Peekable,
+    path::PathBuf,
     borrow::Cow,
     format as f,
 };
@@ -77,8 +78,8 @@ pub enum Lit {
 }
 
 
-pub fn tokenize(file_path: &str) -> Result<TokenStream, Cow<'static, str>> {
-    let mut r = Reader::new(file_path)?;
+pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
+    let mut r = Reader::new(file)?;
 
     let mut tokens = Vec::new();
     loop {
