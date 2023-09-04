@@ -25,16 +25,27 @@ impl Reader {
         &self.content[self.current_idx..]
     }
 
+    #[inline(always)] pub fn file(&self) -> &str {
+        &self.file_path
+    }
+    #[inline(always)] pub fn line(&self) -> &usize {
+        &self.current_line
+    }
+    #[inline(always)] pub fn column(&self) -> &usize {
+        &self.current_column
+    }
+
     pub fn read(&mut self, max_bytes: usize) -> &[u8] {
+        let start_idx = self.current_idx;
+
         let remained = self.remained();
         let add_idx  = max_bytes.min(remained.len());
-        let read_bytes = &remained[..add_idx];
 
         let mut line   = self.current_line.clone();
         let mut column = self.current_column.clone();
 
         let mut was_newline = false;
-        for b in read_bytes {
+        for b in &remained[..add_idx] {
             column += 1;
             if was_newline {line += 1; column = 1}
             was_newline = &b'\n' == b
@@ -44,7 +55,7 @@ impl Reader {
         self.current_line   = line;
         self.current_column = column;
 
-        read_bytes
+        &self.content[start_idx..(start_idx + add_idx)]
     }
     pub fn consume(&mut self, max_bytes: usize) {
         let _ = self.read(max_bytes);
@@ -69,7 +80,6 @@ impl Reader {
 
 impl Reader {
     pub fn parse_keyword(&mut self, keyword: &'static str) -> Result<(), Cow<'static, str>> {
-        self.skip_whitespace();
         self.remained().starts_with(keyword.as_bytes())
             .then(|| self.consume(keyword.len()))
             .ok_or_else(|| Cow::Owned(
@@ -80,7 +90,6 @@ impl Reader {
             )))
     }
     pub fn parse_oneof_keywords<const N: usize>(&mut self, keywords: [&'static str; N]) -> Result<usize, Cow<'static, str>> {
-        self.skip_whitespace();
         for i in 0..keywords.len() {
             if self.remained().starts_with(&keywords[i].as_bytes()) {
                 self.consume(keywords[i].len());
@@ -95,8 +104,6 @@ impl Reader {
         )))
     }
     pub fn parse_ident(&mut self) -> Result<String, Cow<'static, str>> {
-        self.skip_whitespace();
-
         let mut ident_len = 0;
         while !self.remained()[ident_len].is_ascii_whitespace() {
             ident_len += 1
@@ -113,8 +120,6 @@ impl Reader {
         Ok(unsafe { String::from_utf8_unchecked(self.remained()[..ident_len].to_vec()) })
     }
     pub fn parse_string_literal(&mut self) -> Result<String, Cow<'static, str>> {
-        self.skip_whitespace();
-
         self.parse_keyword("\"")?;
         let mut literal_bytes = Vec::new();
         while self.remained().first().is_some_and(|b| &b'"' != b) {
@@ -125,11 +130,10 @@ impl Reader {
 
         Ok(unsafe { String::from_utf8_unchecked(literal_bytes) })
     }
-    pub fn parse_int_literal(&mut self) -> Result<i32, Cow<'static, str>> {
-        self.skip_whitespace();
+    pub fn parse_positive_integer_literal(&mut self) -> Result<u64, Cow<'static, str>> {
+        let mut integer = 0;
+        let mut degit   = 0;
 
-        let mut int   = 0;
-        let mut degit = 0;
         loop {
             let b = self.remained().first().ok_or_else(|| Cow::Owned(f!(
                 "[{}:{}:{}] Expected an Int value but not found",
@@ -138,7 +142,7 @@ impl Reader {
                 &self.current_column,
             )))?;
             match b {
-                b'0'..=b'9' => {int += (*b - b'0') as i32; degit += 1}
+                b'0'..=b'9' => {integer = integer * 10 + (*b - b'0') as u64; degit += 1}
                 _ => break,
             }
         }
@@ -151,34 +155,12 @@ impl Reader {
         )))}
 
         self.consume(degit);
-        Ok(int)
+        Ok(integer)
     }
-    pub fn parse_bigint_literal(&mut self) -> Result<i64, Cow<'static, str>> {
-        self.skip_whitespace();
-
-        let mut int   = 0;
-        let mut degit = 0;
-        loop {
-            let b = self.remained().first().ok_or_else(|| Cow::Owned(f!(
-                "[{}:{}:{}] Expected an Int value but not found",
-                &self.file_path,
-                &self.current_line,
-                &self.current_column,
-            )))?;
-            match b {
-                b'0'..=b'9' => {int += (*b - b'0') as i64; degit += 1}
-                _ => break,
-            }
-        }
-
-        if degit == 0 {return Err(Cow::Owned(f!(
-            "[{}:{}:{}] Expected an Int value but not found",
-            &self.file_path,
-            &self.current_line,
-            &self.current_column,
-        )))}
-
-        self.consume(degit);
-        Ok(int)
+    pub fn parse_integer_literal(&mut self) -> Result<i128, Cow<'static, str>> {
+        let negetive = self.parse_keyword("-").is_ok();
+        let absolute = self.parse_positive_integer_literal()? as i128;
+        
+        Ok(if negetive { -absolute } else {absolute})
     }
 }
