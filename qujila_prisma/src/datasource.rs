@@ -8,15 +8,11 @@ pub struct DataSource {
     pub url:      String,
 } impl Parse for DataSource {
     fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
-        let _ = match ts.next().ok_or_else(|| Cow::Borrowed("Unexpectedly end of input"))? {
-            (_, Token::_datasource) => (),
-            (loc, _) => return Err(loc.Msg("Expected keyword `generator`"))
-        };
-        let name = match ts.next().ok_or_else(|| Cow::Borrowed("Unexpectedly end of input"))? {
-            (_, Token::Ident(name)) => name,
-            (loc, _) => return Err(loc.Msg("Expected an identifier"))
-        };
-        let _ = 
+        ts.try_consume(Token::Keyword(Keyword::_datasource))?;
+        let Ident { name } = ts.try_pop_ident()?;
+
+        ts.try_consume(Token::BraceOpen)?;
+        //
     }
 }
 

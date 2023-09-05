@@ -30,18 +30,18 @@ impl Parse for Schema {
         let mut enums      = vec![];
         let mut models     = vec![];
 
-        while let Some((location, t)) = ts.next() {
+        while let Some((location, t)) = ts.peek() {
             match t {
-                Token::_generator  => {
+                Token::Keyword(Keyword::_generator)  => {
                     if generator.is_some() {return Err(Cow::Owned(f!("{location} generator defined mutiple times")))}
                     generator.replace(GeneratorClient::parse(ts)?);
                 }
-                Token::_datasource => {
+                Token::Keyword(Keyword::_datasource) => {
                     if datasource.is_some() {return Err(Cow::Owned(f!("{location} datasouce defined multiple times")))}
                     datasource.replace(DataSource::parse(ts)?);
                 }
-                Token::_enum  => enums .push(Enum::parse(ts)?),
-                Token::_model => models.push(Model::Parse(ts)?),
+                Token::Keyword(Keyword::_enum)  => enums .push(Enum::parse(ts)?),
+                Token::Keyword(Keyword::_model) => models.push(Model::Parse(ts)?),
 
                 unknown => return Err(Cow::Owned(f!("{location} Found unexpected token: `{unknown}`")))
             }

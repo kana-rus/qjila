@@ -10,8 +10,30 @@ use std::{
 
 pub struct TokenStream(
     Peekable<Stream<(Location, Token)>>
-); impl TokenStream {
-    pub fn 
+); impl Iterator for TokenStream {
+    type Item = <Peekable<Stream<(Location, Token)>> as Iterator>::Item;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+} impl TokenStream {
+    pub fn peek(&self) -> Option<&(Location, Token)> {
+        self.0.peek()
+    }
+    pub fn try_consume(&mut self, expected: Token) -> Result<(), Cow<'static, str>> {
+        let (loc, t) = self.peek().ok_or_else(|| Cow::Owned(f!("Unexpected end of input: Expetced `{expected}`")))?;
+        if t == &expected {
+            let _ = self.next(); Ok(())
+        } else {
+            Err(loc.Msg(f!("Expected `{expected}` but found `{t}`")))
+        }
+    }
+    pub fn try_pop_ident(&mut self) -> Result<&Ident, Cow<'static, str>> {
+        let (loc, t) = self.peek().ok_or_else(|| Cow::Owned(f!("Unexpected end of input: Expetced an identifier")))?;
+        match t {
+            Token::Ident(ident) => Ok(ident),
+            another => Err(loc.Msg(f!("Expected an identifier but found `{t}`")))
+        }
+    }
 }
 
 pub struct Location {
@@ -30,7 +52,7 @@ pub struct Location {
 
 #[derive(PartialEq)]
 pub enum Token {
-    Ident  (String),
+    Ident  (Ident),
     Literal(Lit),
     Keyword(Keyword),
 
@@ -47,7 +69,7 @@ pub enum Token {
 } impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Token::Ident(name) => f.write_str(name),
+            Token::Ident(Ident { name }) => f.write_str(name),
 
             Token::Literal(Lit::Str(s))     => f.write_str(&f!("\"{s}\"")),
             Token::Literal(Lit::Bool(b))    => f.write_str(if *b {"true"} else {"false"}),
@@ -71,6 +93,11 @@ pub enum Token {
             Token::BracketClose => f.write_str("]"),
         }
     }
+}
+
+#[derive(PartialEq)]
+pub struct Ident {
+    pub name: String,
 }
 
 #[derive(PartialEq)]
@@ -114,7 +141,7 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
             b']' => {r.consume(1); push(Token::BracketClose)}
 
             b'e' | b'm' | b'g' | b'd' => match r.parse_oneof_keywords(["enum", "model", "generator", "datasource"]) {
-                Err(_) => push(Token::Ident(r.parse_ident()?)),
+                Err(_) => push(Token::Ident(Ident { name: r.parse_ident()? })),
                 Ok(0) => push(Token::Keyword(Keyword::_enum)),
                 Ok(1) => push(Token::Keyword(Keyword::_model)),
                 Ok(2) => push(Token::Keyword(Keyword::_generator)),
@@ -122,13 +149,13 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
             }
 
             b't' | b'f' => match r.parse_oneof_keywords(["false", "true"]) {
-                Err(_) => push(Token::Ident(r.parse_ident()?)),
+                Err(_) => push(Token::Ident(Ident { name: r.parse_ident()? })),
                 Ok(0)  => push(Token::Literal(Lit::Bool(false))),
                 Ok(1)  => push(Token::Literal(Lit::Bool(true))),
             }
             b'f' => match r.parse_keyword("false") {
                 Ok(_)  => push(Token::Literal(Lit::Bool(false))),
-                Err(_) => push(Token::Ident(r.parse_ident()?)),
+                Err(_) => push(Token::Ident(Ident { name: r.parse_ident()? })),
             }
             b'"' => {
                 let literal = r.parse_string_literal()?;
