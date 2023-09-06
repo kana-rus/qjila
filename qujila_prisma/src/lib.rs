@@ -30,26 +30,26 @@ impl Parse for Schema {
         let mut enums      = vec![];
         let mut models     = vec![];
 
-        while let Some((location, t)) = ts.peek() {
+        while let Some((loc, t)) = ts.peek() {
             match t {
                 Token::Keyword(Keyword::_generator)  => {
-                    if generator.is_some() {return Err(Cow::Owned(f!("{location} generator defined mutiple times")))}
+                    if generator.is_some() {return Err(loc.Msg("Duplicate definition of `generator`"))}
                     generator.replace(GeneratorClient::parse(ts)?);
                 }
                 Token::Keyword(Keyword::_datasource) => {
-                    if datasource.is_some() {return Err(Cow::Owned(f!("{location} datasouce defined multiple times")))}
+                    if datasource.is_some() {return Err(loc.Msg("Duplicate definition of `datasource`"))}
                     datasource.replace(DataSource::parse(ts)?);
                 }
                 Token::Keyword(Keyword::_enum)  => enums .push(Enum::parse(ts)?),
                 Token::Keyword(Keyword::_model) => models.push(Model::Parse(ts)?),
 
-                unknown => return Err(Cow::Owned(f!("{location} Found unexpected token: `{unknown}`")))
+                unknown => return Err(loc.Msg(f!("Unexpected token: `{unknown}`")))
             }
         }
 
         Ok(Schema {
-            generator:  generator .ok_or_else(|| Cow::Owned(f!("`generator` block not found")))?,
-            datasource: datasource.ok_or_else(|| Cow::Owned(f!("`datasource` block not found")))?,
+            generator:  generator .ok_or_else(|| Cow::Owned(f!("No `generator` found")))?,
+            datasource: datasource.ok_or_else(|| Cow::Owned(f!("No `datasource` found")))?,
             enums,
             models,
         })

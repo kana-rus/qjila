@@ -8,31 +8,56 @@ use std::{
 };
 
 
-pub struct TokenStream(
-    Peekable<Stream<(Location, Token)>>
-); impl Iterator for TokenStream {
-    type Item = <Peekable<Stream<(Location, Token)>> as Iterator>::Item;
+pub struct TokenStream {
+    pub current: Location,
+    tokens:      Peekable<Stream<(Location, Token)>>
+} impl Iterator for TokenStream {
+    type Item = Token;
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
+        let (loc, t) = self.tokens.next()?;
+        self.current = loc;
+        Some(t)
     }
 } impl TokenStream {
-    pub fn peek(&self) -> Option<&(Location, Token)> {
-        self.0.peek()
+    fn new(tokens: Vec<(Location, Token)>) -> Self {
+        Self {
+            current: Location { line: 1, column: 0 },
+            tokens:  tokens.into_iter().peekable(),
+        }
     }
-    pub fn try_consume(&mut self, expected: Token) -> Result<(), Cow<'static, str>> {
-        let (loc, t) = self.peek().ok_or_else(|| Cow::Owned(f!("Unexpected end of input: Expetced `{expected}`")))?;
+
+} impl TokenStream {
+    pub fn peek(&self) -> Option<&(Location, Token)> {
+        self.tokens.peek()
+    }
+    pub fn try_peek(&self) -> Result<&(Location/* of token you peeked */, Token), Cow<'static, str>> {
+        self.tokens.peek().ok_or_else(|| self.current.Msg("Unexpectedly input ends with this"))
+    }
+    pub fn try_consume(&mut self, expected: Token) -> Result<&Location, Cow<'static, str>> {
+        let (loc, t) = self.try_peek()?;
         if t == &expected {
-            let _ = self.next(); Ok(())
+            let _ = self.next(); Ok(&self.current)
         } else {
             Err(loc.Msg(f!("Expected `{expected}` but found `{t}`")))
         }
     }
     pub fn try_pop_ident(&mut self) -> Result<&Ident, Cow<'static, str>> {
-        let (loc, t) = self.peek().ok_or_else(|| Cow::Owned(f!("Unexpected end of input: Expetced an identifier")))?;
+        let (loc, t) = self.try_peek()?;
         match t {
-            Token::Ident(ident) => Ok(ident),
-            another => Err(loc.Msg(f!("Expected an identifier but found `{t}`")))
+            Token::Ident(ident) => {self.next(); Ok(ident)}
+            another => Err(loc.Msg(f!("Expected an identifier but found `{another}`")))
         }
+    }
+    pub fn try_pop_literal(&mut self) -> Result<&Lit, Cow<'static, str>> {
+        let (loc, t) = self.try_peek()?;
+        match t {
+            Token::Literal(lit) => {self.next(); Ok(lit)}
+            another => Err(loc.Msg(f!("Expected an literal but found `{another}`")))
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.tokens.peek().is_none()
     }
 }
 
@@ -46,7 +71,7 @@ pub struct Location {
     }
 } impl Location {
     pub fn Msg(&self, msg: impl AsRef<str>) -> Cow<'static, str> {
-        Cow::Owned(f!("[{self}] {}", msg.as_ref()))
+        Cow::Owned(f!("{self} {}", msg.as_ref()))
     }
 }
 
@@ -127,7 +152,7 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
         let location = Location { line: r.line(), column: r.column()};
         let push     = |token: Token| tokens.push((location, token));
         
-        let Some(b) = r.peek() else {return Ok(TokenStream(tokens.into_iter().peekable()))};
+        let Some(b) = r.peek() else {return Ok(TokenStream::new(tokens))};
         match b {
             b'@' => {r.consume(1); push(Token::At)}
             b'=' => {r.consume(1); push(Token::Eq)}
