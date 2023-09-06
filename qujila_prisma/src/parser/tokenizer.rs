@@ -31,7 +31,7 @@ pub struct TokenStream {
         self.tokens.peek()
     }
     pub fn try_peek(&self) -> Result<&(Location/* of token you peeked */, Token), Cow<'static, str>> {
-        self.tokens.peek().ok_or_else(|| self.current.Msg("Unexpectedly input ends with this"))
+        self.peek().ok_or_else(|| self.current.Msg("Unexpectedly input ends with this"))
     }
     pub fn try_consume(&mut self, expected: Token) -> Result<&Location, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
