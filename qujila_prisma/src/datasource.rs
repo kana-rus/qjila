@@ -21,7 +21,7 @@ pub struct DataSource {
                     ts.try_consume(Token::Eq)?;
                     let Lit::Str(s) = ts.try_pop_literal()?
                         else {return Err(ts.current.Msg("Expected a string literal but found"))};
-                    provider = Ok(Provider::parse(name)?)
+                    provider = Ok(Provider::parse(s)?)
                 }
                 Token::Ident(Ident { name }) if name == "url" => {
                     if url.is_ok() {return Err(ts.current.Msg("Found duplicatae definition of `url`"))}
