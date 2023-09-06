@@ -19,20 +19,25 @@ pub struct DataSource {
                 Token::Ident(Ident { name }) if name == "provider" => {
                     if provider.is_ok() {return Err(ts.current.Msg("Found duplicatae definition of `provider`"))}
                     ts.try_consume(Token::Eq)?;
+
                     let Lit::Str(s) = ts.try_pop_literal()?
                         else {return Err(ts.current.Msg("Expected a string literal but found"))};
-                    provider = Ok(Provider::parse(s)?)
+                    provider = Ok(Provider::from_str(s)?)
                 }
                 Token::Ident(Ident { name }) if name == "url" => {
                     if url.is_ok() {return Err(ts.current.Msg("Found duplicatae definition of `url`"))}
                     ts.try_consume(Token::Eq)?;
-                    url = Ok(match ts.try_peek()? {
-                        (_, Token::Ident(i)) => {
-                            // `url = env("...")`
-                            todo!()
+
+                    url = Ok({
+                        let (loc, t) = ts.try_peek()?;
+                        match t {
+                            Token::Ident(i) => {
+                                // `url = env("...")`
+                                todo!()
+                            }
+                            Token::Literal(Lit::Str(s)) => s.to_owned(),
+                            another => return Err(loc.Msg(f!("Expected string expression but found `{another}`")))
                         }
-                        (_, Token::Literal(Lit::Str(s))) => s.to_owned(),
-                        (loc, found) => return Err(loc.Msg(f!("Expected string expression but found `{found}`")))
                     })
                 }
                 another => return Err(ts.current.Msg(f!("Expected one of `provider`, `url` but found `{another}`")))
@@ -53,7 +58,7 @@ pub enum Provider {
     mysql,
     sqlite,
 } impl Provider {
-    fn parse(input: &str) -> Result<Self, Cow<'static, str>> {
+    fn from_str(input: &str) -> Result<Self, Cow<'static, str>> {
         match input {
             "postgresql" => Ok(Self::postgresql),
             "mysql"      => Ok(Self::mysql),
