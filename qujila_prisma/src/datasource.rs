@@ -17,14 +17,14 @@ pub struct DataSource {
         while let Some(t) = ts.next() {
             match &t {
                 Token::Ident(Ident { name }) if name == "provider" => {
-                    if provider.is_ok() {return Err(ts.current.Msg("Found duplicata definition of `provider`"))}
+                    if provider.is_ok() {return Err(ts.current.Msg("Found duplicatae definition of `provider`"))}
                     ts.try_consume(Token::Eq)?;
                     let Lit::Str(s) = ts.try_pop_literal()?
                         else {return Err(ts.current.Msg("Expected a string literal but found"))};
                     provider = Ok(Provider::parse(name)?)
                 }
                 Token::Ident(Ident { name }) if name == "url" => {
-                    if url.is_ok() {return Err(ts.current.Msg("Found duplicata definition of `url`"))}
+                    if url.is_ok() {return Err(ts.current.Msg("Found duplicatae definition of `url`"))}
                     ts.try_consume(Token::Eq)?;
                     let Lit::Str(s) = ts.try_pop_literal()?
                         else {return Err(ts.current.Msg("Expected a string literal"))};
