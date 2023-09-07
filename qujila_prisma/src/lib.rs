@@ -4,11 +4,13 @@ mod parser;
 
 mod generator_client;
 mod datasource;
+mod function;
 mod enums;
 mod model;
 
 use generator_client::GeneratorClient;
 use datasource::DataSource;
+use function::*;
 use enums::Enum;
 use model::Model;
 

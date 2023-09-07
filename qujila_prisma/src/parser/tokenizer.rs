@@ -41,6 +41,13 @@ pub struct TokenStream {
             Err(loc.Msg(f!("Expected `{expected}` but found `{t}`")))
         }
     }
+    pub fn try_consume_ident(&mut self, expected_ident: impl AsRef<str>) -> Result<&Location, Cow<'static, str>> {
+        let (loc, t) = self.try_peek()?;
+        match t {
+            Token::Ident(Ident { name }) if &**name == expected_ident.as_ref() => Ok(loc),
+            another => Err(loc.Msg(f!("Expected an identifier `{}` but found `{another}`", expected_ident.as_ref())))
+        }
+    }
     pub fn try_pop_ident(&mut self) -> Result<&Ident, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
         match t {
