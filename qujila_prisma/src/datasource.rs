@@ -14,39 +14,35 @@ pub struct DataSource {
         let mut provider = Err(Cow::Owned(f!("No provider found in datasource block")));
         let mut url      = Err(Cow::Owned(f!("No url found in datasource block")));
         ts.try_consume(Token::BraceOpen)?;
-        while let Some(t) = ts.next() {
-            match &t {
-                Token::Ident(key) => match &*key.name {
-                    "provider" => {
-                        if provider.is_ok() {return Err(ts.current.Msg("Found duplicatae definition of `provider`"))}
-                        ts.try_consume(Token::Eq)?;
+        while let Ok(key) = ts.try_pop_ident() {
+            match &*key.name {
+                "provider" => {
+                    if provider.is_ok() {return Err(ts.current.Msg("Duplicate definition of `provider`"))}
+                    ts.try_consume(Token::Eq)?;
 
-                        let Lit::Str(s) = ts.try_pop_literal()?
-                            else {return Err(ts.current.Msg("Expected a string literal but found"))};
-                        provider = Ok(Provider::from_str(s)?)
-                    }
-                    "url" => {
-                        if url.is_ok() {return Err(ts.current.Msg("Found duplicatae definition of `url`"))}
-                        ts.try_consume(Token::Eq)?;
-
-                        url = Ok({
-                            let (loc, t) = ts.try_peek()?;
-                            match t {
-                                Token::Ident(i) => {
-                                    // `url = env("...")`
-                                    env::parse(ts)?.eval()?
-                                }
-                                Token::Literal(Lit::Str(s)) => {
-                                    ts.next();
-                                    s.to_owned()
-                                }
-                                another => return Err(loc.Msg(f!("Expected string expression but found `{another}`")))
-                            }
-                        })
-                    }
-                    another => return Err(ts.current.Msg(f!("Expected one of `provider`, `url` but found `{another}`")))
+                    let p = ts.try_pop_string_literal()?;
+                    provider = Provider::from_str(&p)
                 }
-                another => return Err(ts.current.Msg(f!("Expected one of `provider`, `url` but found `{another}`")))
+                "url" => {
+                    if url.is_ok() {return Err(ts.current.Msg("Duplicate definition of `url`"))}
+                    ts.try_consume(Token::Eq)?;
+
+                    url = Ok({
+                        let (loc, t) = ts.try_peek()?;
+                        match t {
+                            Token::Literal(Lit::Str(s)) => {
+                                ts.next();
+                                s.to_string()
+                            }
+                            Token::Ident(_) => {
+                                // `url = env("...")`
+                                function::env::parse(ts)?.eval()?
+                            }
+                            other => return Err(loc.Msg(f!("Expected string expression but found `{other}`")))
+                        }
+                    })
+                }
+                other => return Err(ts.current.Msg(f!("Expected onr of `provider`, `url` but found `{other}`")))
             }
         }
         ts.try_consume(Token::BraceClose)?;

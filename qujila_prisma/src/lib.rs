@@ -10,7 +10,7 @@ mod model;
 
 use generator_client::GeneratorClient;
 use datasource::DataSource;
-use function::*;
+use function::Function;
 use enums::Enum;
 use model::Model;
 

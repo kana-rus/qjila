@@ -55,11 +55,11 @@ pub struct TokenStream {
             another => Err(loc.Msg(f!("Expected an identifier but found `{another}`")))
         }
     }
-    pub fn try_pop_literal(&mut self) -> Result<&Lit, Cow<'static, str>> {
+    pub fn try_pop_string_literal(&mut self) -> Result<String, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
         match t {
-            Token::Literal(lit) => {self.next(); Ok(lit)}
-            another => Err(loc.Msg(f!("Expected an literal but found `{another}`")))
+            Token::Literal(Lit::Str(s)) => {self.next(); Ok(s.to_string())}
+            other => Err(loc.Msg(f!("Expected a string literal but found `{other}`")))
         }
     }
 
