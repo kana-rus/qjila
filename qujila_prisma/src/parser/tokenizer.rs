@@ -109,6 +109,7 @@ pub enum Token {
 
     At,
     Eq,
+    At2,
     Colon,
     Question,
     ParenOpen,
@@ -133,6 +134,7 @@ pub enum Token {
             Token::Keyword(Keyword::_datasource) => f.write_str("datasource"),
 
             Token::At           => f.write_str("@"),
+            Token::At2          => f.write_str("@@"),
             Token::Eq           => f.write_str("="),
             Token::Colon        => f.write_str(":"),
             Token::Question     => f.write_str("?"),
@@ -178,7 +180,6 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
         
         let Some(b) = r.peek() else {return Ok(TokenStream::new(tokens))};
         match b {
-            b'@' => {r.consume(1); push(Token::At)}
             b'=' => {r.consume(1); push(Token::Eq)}
             b':' => {r.consume(1); push(Token::Colon)}
             b'?' => {r.consume(1); push(Token::Question)}
@@ -188,6 +189,12 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
             b'}' => {r.consume(1); push(Token::BraceClose)}
             b'[' => {r.consume(1); push(Token::BracketOpen)}
             b']' => {r.consume(1); push(Token::BracketClose)}
+
+            b'@' => match r.peek() {
+                None       => {r.consume(1); push(Token::At); return Ok(TokenStream::new(tokens))}
+                Some(b'@') => {r.consume(2); push(Token::At2)}
+                Some(_)    => {r.consume(1); push(Token::At)}
+            }
 
             b'e' | b'm' | b'g' | b'd' => match r.parse_oneof_keywords(["enum", "model", "generator", "datasource"]) {
                 Ok(0)  => push(Token::Keyword(Keyword::_enum)),

@@ -48,13 +48,13 @@ pub struct Model {
         ts.try_consume(Token::BraceOpen)?;
         while let Some((loc, t)) = ts.pop_if(|t| t != &Token::BraceClose) {
             match t {
-                Token::At => {
-
+                Token::At2 => {
+                    //
                 }
                 Token::Ident(field) => {
-
+                    //
                 }
-                other => return Err(loc.Msg(f!("Expected a field name or `@` (for a block attribute), but found `{other}`")))
+                other => return Err(loc.Msg(f!("Expected a field name or `@@` but found `{other}`")))
             }
         }
         ts.try_consume(Token::BraceOpen)?;
