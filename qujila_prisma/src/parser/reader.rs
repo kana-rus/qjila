@@ -10,7 +10,7 @@ pub struct Reader {
 
 impl Reader {
     pub fn new(path: PathBuf) -> Result<Self, Cow<'static, str>> {
-        let content = fs::read(path).map_err(|e| Cow::Owned(f!("Can't read file `{}`: {e}", path.display())))?;
+        let content = fs::read(path.as_path()).map_err(|e| Cow::Owned(f!("Can't read file `{}`: {e}", path.display())))?;
         Ok(Self {
             content,
             current_idx:    0,
@@ -88,9 +88,6 @@ impl Reader {
             self.consume(1)
         }
     }
-}
-
-impl Reader {
 }
 
 impl Reader {

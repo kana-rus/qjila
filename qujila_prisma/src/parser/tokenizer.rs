@@ -1,5 +1,6 @@
 use super::reader::{Reader};
 use std::{
+    hint::unreachable_unchecked,
     vec::IntoIter as Stream,
     iter::Peekable,
     path::PathBuf,
@@ -11,63 +12,81 @@ use std::{
 pub struct TokenStream {
     pub current: Location,
     tokens:      Peekable<Stream<(Location, Token)>>
-} impl Iterator for TokenStream {
-    type Item = Token;
-    fn next(&mut self) -> Option<Self::Item> {
-        let (loc, t) = self.tokens.next()?;
-        self.current = loc;
-        Some(t)
-    }
-} impl TokenStream {
+}
+
+impl TokenStream {
     fn new(tokens: Vec<(Location, Token)>) -> Self {
         Self {
             current: Location { line: 1, column: 0 },
             tokens:  tokens.into_iter().peekable(),
         }
     }
+    fn pop_unchecked(&mut self) -> (Location, Token) {
+        unsafe {self.pop().unwrap_unchecked()}
+    }
+}
 
-} impl TokenStream {
-    pub fn peek(&self) -> Option<&(Location, Token)> {
-        self.tokens.peek()
+impl TokenStream {
+    pub fn pop(&mut self) -> Option<(Location, Token)> {
+        let (loc, t) = self.tokens.next()?;
+        self.current = loc;
+        Some((loc, t))
     }
-    pub fn try_peek(&self) -> Result<&(Location/* of token you peeked */, Token), Cow<'static, str>> {
-        self.peek().ok_or_else(|| self.current.Msg("Unexpectedly input ends with this"))
+    pub fn pop_if(&mut self, condition: impl Fn(&Token)->bool) -> Option<(Location, Token)> {
+        self.peek().is_some_and(|(_, t)| condition(t)).then(|| self.pop_unchecked())
     }
-    pub fn try_consume(&mut self, expected: Token) -> Result<&Location, Cow<'static, str>> {
-        let (loc, t) = self.try_peek()?;
-        if t == &expected {
-            let _ = self.next(); Ok(&self.current)
+    pub fn try_pop(&mut self) -> Result<(Location, Token), Cow<'static, str>> {
+        if self.peek().is_some() {
+            Ok(self.pop_unchecked())
         } else {
-            Err(loc.Msg(f!("Expected `{expected}` but found `{t}`")))
+            Err(self.current.Msg("Unexpectedly end of input"))
         }
     }
-    pub fn try_consume_ident(&mut self, expected_ident: impl AsRef<str>) -> Result<&Location, Cow<'static, str>> {
+    pub fn try_pop_ident(&mut self) -> Result<String, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
         match t {
-            Token::Ident(Ident { name }) if &**name == expected_ident.as_ref() => Ok(loc),
-            another => Err(loc.Msg(f!("Expected an identifier `{}` but found `{another}`", expected_ident.as_ref())))
-        }
-    }
-    pub fn try_pop_ident(&mut self) -> Result<&Ident, Cow<'static, str>> {
-        let (loc, t) = self.try_peek()?;
-        match t {
-            Token::Ident(ident) => {self.next(); Ok(ident)}
+            Token::Ident(_) => {let (_, Token::Ident(ident)) = self.pop_unchecked() else {unsafe {unreachable_unchecked()}}; Ok(ident)}
             another => Err(loc.Msg(f!("Expected an identifier but found `{another}`")))
         }
     }
     pub fn try_pop_string_literal(&mut self) -> Result<String, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
         match t {
-            Token::Literal(Lit::Str(s)) => {self.next(); Ok(s.to_string())}
+            Token::Literal(Lit::Str(_)) => {let (_, Token::Literal(Lit::Str(s))) = self.pop_unchecked() else {unsafe {unreachable_unchecked()}}; Ok(s)}
             other => Err(loc.Msg(f!("Expected a string literal but found `{other}`")))
         }
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub fn peek(&mut self) -> Option<&(Location, Token)> {
+        self.tokens.peek()
+    }
+    pub fn try_peek(&mut self) -> Result<&(Location/* of token you peeked */, Token), Cow<'static, str>> {
+        let err = self.current.Msg("Unexpectedly input ends with this");
+        self.peek().ok_or_else(|| err)
+    }
+
+    pub fn try_consume(&mut self, expected: Token) -> Result<(), Cow<'static, str>> {
+        let (loc, t) = self.try_peek()?;
+        if t == &expected {
+            self.pop_unchecked(); Ok(())
+        } else {
+            Err(loc.Msg(f!("Expected `{expected}` but found `{t}`")))
+        }
+    }
+    pub fn try_consume_ident(&mut self, expected_ident: impl AsRef<str>) -> Result<(), Cow<'static, str>> {
+        let (loc, t) = self.try_peek()?;
+        match t {
+            Token::Ident(ident) if &**ident == expected_ident.as_ref() => {self.pop_unchecked(); Ok(())},
+            another => Err(loc.Msg(f!("Expected an identifier `{}` but found `{another}`", expected_ident.as_ref())))
+        }
+    }
+
+    pub fn is_empty(&mut self) -> bool {
         self.tokens.peek().is_none()
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Location {
     pub line:   usize,
     pub column: usize,
@@ -84,7 +103,7 @@ pub struct Location {
 
 #[derive(PartialEq)]
 pub enum Token {
-    Ident  (Ident),
+    Ident  (String),
     Literal(Lit),
     Keyword(Keyword),
 
@@ -101,7 +120,7 @@ pub enum Token {
 } impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Token::Ident(Ident { name }) => f.write_str(name),
+            Token::Ident(s) => f.write_str(s),
 
             Token::Literal(Lit::Str(s))     => f.write_str(&f!("\"{s}\"")),
             Token::Literal(Lit::Bool(b))    => f.write_str(if *b {"true"} else {"false"}),
@@ -128,9 +147,7 @@ pub enum Token {
 }
 
 #[derive(PartialEq)]
-pub struct Ident {
-    pub name: String,
-}
+pub struct Ident(String);
 
 #[derive(PartialEq)]
 pub enum Lit {
@@ -157,7 +174,7 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
         r.skip_whitespace();
 
         let location = Location { line: r.line(), column: r.column()};
-        let push     = |token: Token| tokens.push((location, token));
+        let mut push = |token: Token| tokens.push((location, token));
         
         let Some(b) = r.peek() else {return Ok(TokenStream::new(tokens))};
         match b {
@@ -173,21 +190,19 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
             b']' => {r.consume(1); push(Token::BracketClose)}
 
             b'e' | b'm' | b'g' | b'd' => match r.parse_oneof_keywords(["enum", "model", "generator", "datasource"]) {
-                Err(_) => push(Token::Ident(Ident { name: r.parse_ident()? })),
-                Ok(0) => push(Token::Keyword(Keyword::_enum)),
-                Ok(1) => push(Token::Keyword(Keyword::_model)),
-                Ok(2) => push(Token::Keyword(Keyword::_generator)),
-                Ok(3) => push(Token::Keyword(Keyword::_datasource)),
+                Ok(0)  => push(Token::Keyword(Keyword::_enum)),
+                Ok(1)  => push(Token::Keyword(Keyword::_model)),
+                Ok(2)  => push(Token::Keyword(Keyword::_generator)),
+                Ok(3)  => push(Token::Keyword(Keyword::_datasource)),
+                Ok(_)  => unsafe {unreachable_unchecked()}
+                Err(_) => push(Token::Ident(r.parse_ident()?)),
             }
 
             b't' | b'f' => match r.parse_oneof_keywords(["false", "true"]) {
-                Err(_) => push(Token::Ident(Ident { name: r.parse_ident()? })),
                 Ok(0)  => push(Token::Literal(Lit::Bool(false))),
                 Ok(1)  => push(Token::Literal(Lit::Bool(true))),
-            }
-            b'f' => match r.parse_keyword("false") {
-                Ok(_)  => push(Token::Literal(Lit::Bool(false))),
-                Err(_) => push(Token::Ident(Ident { name: r.parse_ident()? })),
+                Ok(_)  => unsafe {unreachable_unchecked()}
+                Err(_) => push(Token::Ident(r.parse_ident()?)),
             }
             b'"' => {
                 let literal = r.parse_string_literal()?;

@@ -14,7 +14,7 @@ impl Parse for GeneratorClient {
         let mut provider = None;
         let mut output   = None;
         while let Ok(key) = ts.try_pop_ident() {
-            match &*key.name {
+            match &*key {
                 "provider" => {
                     if provider.is_some() {return Err(ts.current.Msg("Duplicate definition of `provider`"))}
                     ts.try_consume(Token::Eq)?;

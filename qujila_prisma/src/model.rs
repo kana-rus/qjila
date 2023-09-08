@@ -1,3 +1,5 @@
+use crate::*;
+
 mod string;
 mod boolean;
 mod int;
@@ -29,6 +31,36 @@ pub struct Model {
     pub ids:     Vec<Vec<String>>,
     pub uniques: Vec<Vec<String>>,
     pub indexes: Vec<Vec<String>>,
+} impl Parse for Model {
+    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        let mut M = Self {
+            name:    String::new(),
+            fields:  Vec::new(),
+            map:     None,
+            ids:     Vec::new(),
+            uniques: Vec::new(),
+            indexes: Vec::new(),
+        };
+
+        ts.try_consume(Token::Keyword(Keyword::_model))?;
+        M.name = ts.try_pop_ident()?;
+
+        ts.try_consume(Token::BraceOpen)?;
+        while let Some((loc, t)) = ts.pop_if(|t| t != &Token::BraceClose) {
+            match t {
+                Token::At => {
+
+                }
+                Token::Ident(field) => {
+
+                }
+                other => return Err(loc.Msg(f!("Expected a field name or `@` (for a block attribute), but found `{other}`")))
+            }
+        }
+        ts.try_consume(Token::BraceOpen)?;
+
+        Ok(M)
+    }
 }
 
 pub struct Field {

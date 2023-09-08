@@ -9,13 +9,13 @@ pub struct DataSource {
 } impl Parse for DataSource {
     fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
         ts.try_consume(Token::Keyword(Keyword::_datasource))?;
-        let Ident { name } = ts.try_pop_ident()?;
+        let name = ts.try_pop_ident()?;
 
+        ts.try_consume(Token::BraceOpen)?;
         let mut provider = Err(Cow::Owned(f!("No provider found in datasource block")));
         let mut url      = Err(Cow::Owned(f!("No url found in datasource block")));
-        ts.try_consume(Token::BraceOpen)?;
         while let Ok(key) = ts.try_pop_ident() {
-            match &*key.name {
+            match &*key {
                 "provider" => {
                     if provider.is_ok() {return Err(ts.current.Msg("Duplicate definition of `provider`"))}
                     ts.try_consume(Token::Eq)?;
@@ -30,9 +30,8 @@ pub struct DataSource {
                     url = Ok({
                         let (loc, t) = ts.try_peek()?;
                         match t {
-                            Token::Literal(Lit::Str(s)) => {
-                                ts.next();
-                                s.to_string()
+                            Token::Literal(Lit::Str(_)) => {
+                                ts.try_pop_string_literal().unwrap()
                             }
                             Token::Ident(_) => {
                                 // `url = env("...")`

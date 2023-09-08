@@ -43,7 +43,7 @@ impl Parse for Schema {
                     datasource.replace(DataSource::parse(ts)?);
                 }
                 Token::Keyword(Keyword::_enum)  => enums .push(Enum::parse(ts)?),
-                Token::Keyword(Keyword::_model) => models.push(Model::Parse(ts)?),
+                Token::Keyword(Keyword::_model) => models.push(Model::parse(ts)?),
 
                 unknown => return Err(loc.Msg(f!("Unexpected token: `{unknown}`")))
             }
