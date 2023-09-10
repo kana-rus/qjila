@@ -46,15 +46,32 @@ pub struct Model {
         M.name = ts.try_pop_ident()?;
 
         ts.try_consume(Token::BraceOpen)?;
-        while let Some((loc, t)) = ts.pop_if(|t| t != &Token::BraceClose) {
-            match t {
-                Token::At2 => {
-                    //
+        loop {
+            let (loc, next) = ts.try_peek()?;
+            if next == &Token::BraceClose {break}
+
+            match next {
+                Token::At2 => {ts.pop();
+                    match &*ts.try_pop_ident()? {
+                        "map" => {
+                            todo!()
+                        }
+                        "id" => {
+                            todo!()
+                        }
+                        "unique" => {
+                            todo!()
+                        }
+                        "index" => {
+                            todo!()
+                        }
+                        other => return Err(ts.current.Msg(f!("Expected one of `map`, `id`, `unique`, `index` but found `{other}`")))
+                    }
                 }
-                Token::Ident(field) => {
-                    //
+                Token::Ident(_) => {
+                    M.fields.push(Field::parse(ts)?)
                 }
-                other => return Err(loc.Msg(f!("Expected a field name or `@@` but found `{other}`")))
+                other => return Err(loc.Msg(f!("Expected an identifier or `@@` but found `{other}`")))
             }
         }
         ts.try_consume(Token::BraceOpen)?;
@@ -71,6 +88,10 @@ pub struct Field {
     pub id:            Option<()>,
     pub unique:        Option<()>,
     pub relation:      Option<Relation>,
+} impl Parse for Field {
+    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        
+    }
 }
 
 pub enum FieldSchema {
