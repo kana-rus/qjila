@@ -44,7 +44,7 @@ pub struct StringListAttributes {
     pub default:   Option<Vec<StringValue>>,
 } impl Parse for StringListAttributes {
     fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
-        let mut SA = StringListAttributes {
+        let mut SLA = StringListAttributes {
             id:      false,
             unique:  false,
             map:     None,
@@ -53,23 +53,23 @@ pub struct StringListAttributes {
 
         while ts.try_consume(Token::At).is_ok() {
             match &*ts.try_pop_ident()? {
-                "id"      => SA.id     = true,
-                "unique"  => SA.unique = true,
+                "id"      => SLA.id     = true,
+                "unique"  => SLA.unique = true,
                 "map"     => {
                     ts.try_consume(Token::ParenOpen)?;
-                    SA.map = Some(ts.try_pop_string_literal()?);
+                    SLA.map = Some(ts.try_pop_string_literal()?);
                     ts.try_consume(Token::ParenClose)?;
                 }
                 "default" => {
                     ts.try_consume(Token::ParenOpen)?;
-                    SA.default = Some(ts.parse_csv(|__ts| StringValue::parse(__ts))?);
+                    SLA.default = Some(ts.parse_csv(|__ts| StringValue::parse(__ts))?);
                     ts.try_consume(Token::ParenClose)?;
                 }
                 other => return Err(ts.current.Msg(f!("Expected one of `id`, `unique`, `map`, `default` but found `{other}`")))
             }
         }
 
-        Ok(SA)
+        Ok(SLA)
     }
 }
 
