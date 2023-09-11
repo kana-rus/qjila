@@ -1,18 +1,18 @@
-pub struct EnumField {
+pub struct EnumAttributes {
     pub map:       Option<String>,
     pub id:        Option<()>,
     pub unique:    Option<()>,
     pub default:   Option<String>,
 }
 
-pub struct EnumListField {
+pub struct EnumListAttributes {
     pub map:       Option<String>,
     pub id:        Option<()>,
     pub unique:    Option<()>,
     pub default:   Option<Vec<String>>,
 }
 
-pub struct EnumOptionalField {
+pub struct EnumOptionalAttributes {
     pub map:       Option<String>,
     pub id:        Option<()>,
     pub unique:    Option<()>,

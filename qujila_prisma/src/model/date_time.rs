@@ -1,18 +1,18 @@
-pub struct DateTimeField {
+pub struct DateTimeAttributes {
     pub map:       Option<String>,
     pub id:        Option<()>,
     pub unique:    Option<()>,
     pub default:   Option<DateTimeValue>
 }
 
-pub struct DateTimeListField {
+pub struct DateTimeListAttributes {
     pub map:       Option<String>,
     pub id:        Option<()>,
     pub unique:    Option<()>,
     pub default: Option<  Vec<DateTimeValue>>,
 }
 
-pub struct DateTimeOptionalField {
+pub struct DateTimeOptionalAttributes {
     pub map:       Option<String>,
     pub id:        Option<()>,
     pub unique:    Option<()>,

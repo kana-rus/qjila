@@ -1,5 +1,3 @@
-use crate::*;
-
 mod string;
 mod boolean;
 mod int;
@@ -9,6 +7,9 @@ mod decimal;
 mod enums;
 mod date_time;
 mod bytes;
+
+use crate::*;
+use {string::*, boolean::*, int::*, big_int::*, float::*, decimal::*, enums::*, date_time::*, bytes::*};
 
 
 pub struct Model {
@@ -81,41 +82,41 @@ pub struct Field {
 }
 
 pub enum FieldSchema {
-    String         (string::StringField),
-    StringList     (string::StringListField),
-    StringOptional (string::StringOptionalField),
+    String         (StringAttributes),
+    StringList     (StringListAttributes),
+    StringOptional (StringOptionalAttributes),
 
-    Boolean         (boolean::BooleanField),
-    BooleanList     (boolean::BooleanListField),
-    BooleanOptional (boolean::BooleanOptionalField),
+    Boolean         (BooleanAttributes),
+    BooleanList     (BooleanListAttributes),
+    BooleanOptional (BooleanOptionalAttributes),
 
-    Int             (int::IntField),
-    IntList         (int::IntListField),
-    IntOptional     (int::IntOptionalField),
+    Int             (IntAttributes),
+    IntList         (IntListAttributes),
+    IntOptional     (IntOptionalAttributes),
 
-    BigInt          (big_int::BigIntField),
-    BigIntList      (big_int::BigIntListField),
-    BigIntOptional  (big_int::BigIntOptionalField),
+    BigInt          (BigIntAttributes),
+    BigIntList      (BigIntListAttributes),
+    BigIntOptional  (BigIntOptionalAttributes),
 
-    Float           (float::FloatField),
-    FloatList       (float::FloatListField),
-    FloatOptional   (float::FloatOptionalField),
+    Float           (FloatAttributes),
+    FloatList       (FloatListAttributes),
+    FloatOptional   (FloatOptionalAttributes),
 
-    Decimal         (decimal::DecimalField),
-    DecimalList     (decimal::DecimalListField),
-    DecimalOptional (decimal::DecimalOptionalField),
+    Decimal         (DecimalAttributes),
+    DecimalList     (DecimalListAttributes),
+    DecimalOptional (DecimalOptionalAttributes),
 
-    Enum            (enums::EnumField),
-    EnumList        (enums::EnumListField),
-    EnumOptional    (enums::EnumOptionalField),
+    Enum            (EnumAttributes),
+    EnumList        (EnumListAttributes),
+    EnumOptional    (EnumOptionalAttributes),
 
-    DateTime        (date_time::DateTimeField),
-    DateTimeList    (date_time::DateTimeListField),
-    DateTimeOptional(date_time::DateTimeOptionalField),
+    DateTime        (DateTimeAttributes),
+    DateTimeList    (DateTimeListAttributes),
+    DateTimeOptional(DateTimeOptionalAttributes),
 
-    Bytes           (bytes::BytesField),
-    BytesList       (bytes::BytesListField),
-    BytesOptional   (bytes::BytesOptionalField),
+    Bytes           (BytesAttributes),
+    BytesList       (BytesListAttributes),
+    BytesOptional   (BytesOptionalAttributes),
 
     Model           { model_name: String, relation: Option<Relation> },
     ModelList       { model_name: String, relation: Option<Relation> },
@@ -168,116 +169,114 @@ pub struct Relation {
 
 impl Parse for FieldSchema {
     fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
-        use {string::*, boolean::*, int::*, big_int::*, float::*, decimal::*, enums::*, date_time::*, bytes::*};
-
         match &*ts.try_pop_ident()? {
             "String" => match &ts.try_peek()?.1 {
                 Token::BracketOpen => {
                     ts.try_consume(Token::BracketOpen)?;
                     ts.try_consume(Token::BracketClose)?;
-                    Ok(Self::StringList(StringListField::parse(ts)?))
+                    Ok(Self::StringList(StringListAttributes::parse(ts)?))
                 }
                 Token::Question => {
                     ts.try_consume(Token::Question)?;
-                    Ok(Self::StringOptional(StringOptionalField::parse(ts)?))
+                    Ok(Self::StringOptional(StringOptionalAttributes::parse(ts)?))
                 }
-                _ => Ok(Self::String(StringField::parse(ts)?))
+                _ => Ok(Self::String(StringAttributes::parse(ts)?))
             }
             "Boolean" => match &ts.try_peek()?.1 {
                 Token::BracketOpen => {
                     ts.try_consume(Token::BracketOpen)?;
                     ts.try_consume(Token::BracketClose)?;
-                    Ok(Self::BooleanList(BooleanListField::parse(ts)?))
+                    Ok(Self::BooleanList(BooleanListAttributes::parse(ts)?))
                 }
                 Token::Question => {
                     ts.try_consume(Token::Question)?;
-                    Ok(Self::BooleanOptional(BooleanOptionalField::parse(ts)?))
+                    Ok(Self::BooleanOptional(BooleanOptionalAttributes::parse(ts)?))
                 }
-                _ => Ok(Self::Boolean(BooleanField::parse(ts)?))
+                _ => Ok(Self::Boolean(BooleanAttributes::parse(ts)?))
             }
             "Int" => match &ts.try_peek()?.1 {
                 Token::BracketOpen => {
                     ts.try_consume(Token::BracketOpen)?;
                     ts.try_consume(Token::BracketClose)?;
-                    Ok(Self::IntList(IntListField::parse(ts)?))
+                    Ok(Self::IntList(IntListAttributes::parse(ts)?))
                 }
                 Token::Question => {
                     ts.try_consume(Token::Question)?;
-                    Ok(Self::IntOptional(IntOptionalField::parse(ts)?))
+                    Ok(Self::IntOptional(IntOptionalAttributes::parse(ts)?))
                 }
-                _ => Ok(Self::Int(IntField::parse(ts)?))
+                _ => Ok(Self::Int(IntAttributes::parse(ts)?))
             }
             "BigInt" => match &ts.try_peek()?.1 {
                 Token::BracketOpen => {
                     ts.try_consume(Token::BracketOpen)?;
                     ts.try_consume(Token::BracketClose)?;
-                    Ok(Self::BigIntList(BigIntListField::parse(ts)?))
+                    Ok(Self::BigIntList(BigIntListAttributes::parse(ts)?))
                 }
                 Token::Question => {
                     ts.try_consume(Token::Question)?;
-                    Ok(Self::BigIntOptional(BigIntOptionalField::parse(ts)?))
+                    Ok(Self::BigIntOptional(BigIntOptionalAttributes::parse(ts)?))
                 }
-                _ => Ok(Self::BigInt(BigIntField::parse(ts)?))
+                _ => Ok(Self::BigInt(BigIntAttributes::parse(ts)?))
             }
             "Float" => match &ts.try_peek()?.1 {
                 Token::BracketOpen => {
                     ts.try_consume(Token::BracketOpen)?;
                     ts.try_consume(Token::BracketClose)?;
-                    Ok(Self::FloatList(FloatListField::parse(ts)?))
+                    Ok(Self::FloatList(FloatListAttributes::parse(ts)?))
                 }
                 Token::Question => {
                     ts.try_consume(Token::Question)?;
-                    Ok(Self::FloatOptional(FloatOptionalField::parse(ts)?))
+                    Ok(Self::FloatOptional(FloatOptionalAttributes::parse(ts)?))
                 }
-                _ => Ok(Self::Float(FloatField::parse(ts)?))
+                _ => Ok(Self::Float(FloatAttributes::parse(ts)?))
             }
             "Decimal" => match &ts.try_peek()?.1 {
                 Token::BracketOpen => {
                     ts.try_consume(Token::BracketOpen)?;
                     ts.try_consume(Token::BracketClose)?;
-                    Ok(Self::DecimalList(DecimalListField::parse(ts)?))
+                    Ok(Self::DecimalList(DecimalListAttributes::parse(ts)?))
                 }
                 Token::Question => {
                     ts.try_consume(Token::Question)?;
-                    Ok(Self::DecimalOptional(DecimalOptionalField::parse(ts)?))
+                    Ok(Self::DecimalOptional(DecimalOptionalAttributes::parse(ts)?))
                 }
-                _ => Ok(Self::Decimal(DecimalField::parse(ts)?))
+                _ => Ok(Self::Decimal(DecimalAttributes::parse(ts)?))
             }
             "Enum" => match &ts.try_peek()?.1 {
                 Token::BracketOpen => {
                     ts.try_consume(Token::BracketOpen)?;
                     ts.try_consume(Token::BracketClose)?;
-                    Ok(Self::EnumList(EnumListField::parse(ts)?))
+                    Ok(Self::EnumList(EnumListAttributes::parse(ts)?))
                 }
                 Token::Question => {
                     ts.try_consume(Token::Question)?;
-                    Ok(Self::EnumOptional(EnumOptionalField::parse(ts)?))
+                    Ok(Self::EnumOptional(EnumOptionalAttributes::parse(ts)?))
                 }
-                _ => Ok(Self::Enum(EnumField::parse(ts)?))
+                _ => Ok(Self::Enum(EnumAttributes::parse(ts)?))
             }
             "DateTime" => match &ts.try_peek()?.1 {
                 Token::BracketOpen => {
                     ts.try_consume(Token::BracketOpen)?;
                     ts.try_consume(Token::BracketClose)?;
-                    Ok(Self::DateTimeList(DateTimeListField::parse(ts)?))
+                    Ok(Self::DateTimeList(DateTimeListAttributes::parse(ts)?))
                 }
                 Token::Question => {
                     ts.try_consume(Token::Question)?;
-                    Ok(Self::DateTimeOptional(DateTimeOptionalField::parse(ts)?))
+                    Ok(Self::DateTimeOptional(DateTimeOptionalAttributes::parse(ts)?))
                 }
-                _ => Ok(Self::DateTime(DateTimeField::parse(ts)?))
+                _ => Ok(Self::DateTime(DateTimeAttributes::parse(ts)?))
             }
             "Bytes" => match &ts.try_peek()?.1 {
                 Token::BracketOpen => {
                     ts.try_consume(Token::BracketOpen)?;
                     ts.try_consume(Token::BracketClose)?;
-                    Ok(Self::BytesList(BytesListField::parse(ts)?))
+                    Ok(Self::BytesList(BytesListAttributes::parse(ts)?))
                 }
                 Token::Question => {
                     ts.try_consume(Token::Question)?;
-                    Ok(Self::BytesOptional(BytesOptionalField::parse(ts)?))
+                    Ok(Self::BytesOptional(BytesOptionalAttributes::parse(ts)?))
                 }
-                _ => Ok(Self::Bytes(BytesField::parse(ts)?))
+                _ => Ok(Self::Bytes(BytesAttributes::parse(ts)?))
             }
             model => match &ts.try_peek()?.1 {
                 Token::BracketOpen => {

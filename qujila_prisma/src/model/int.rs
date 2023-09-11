@@ -1,18 +1,18 @@
-pub struct IntField {
+pub struct IntAttributes {
     pub map:       Option<String>,
     pub id:        Option<()>,
     pub unique:    Option<()>,
     pub default: Option<IntValue>,
 }
 
-pub struct IntListField {
+pub struct IntListAttributes {
     pub map:       Option<String>,
     pub id:        Option<()>,
     pub unique:    Option<()>,
     pub default: Option<Vec<IntValue>>,
 }
 
-pub struct IntOptionalField {
+pub struct IntOptionalAttributes {
     pub map:       Option<String>,
     pub id:        Option<()>,
     pub unique:    Option<()>,

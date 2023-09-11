@@ -1,18 +1,18 @@
-pub struct StringField {
+pub struct StringAttributes {
     pub map:       Option<String>,
     pub id:        Option<()>,
     pub unique:    Option<()>,
     pub default:   Option<StringValue>,
 }
 
-pub struct StringListField {
+pub struct StringListAttributes {
     pub map:       Option<String>,
     pub id:        Option<()>,
     pub unique:    Option<()>,
     pub default:   Option<Vec<StringValue>>,
 }
 
-pub struct StringOptionalField {
+pub struct StringOptionalAttributes {
     pub map:       Option<String>,
     pub id:        Option<()>,
     pub unique:    Option<()>,
