@@ -63,7 +63,7 @@ pub struct EnumListAttributes {
                 "default" => {
                     ts.try_consume(Token::ParenOpen)?;
                     ts.try_consume(Token::BracketOpen)?;
-                    ELA.default = Some(ts.try_pop_csv_idents()?);
+                    ELA.default = Some(ts.parse_csv(|_ts| _ts.try_pop_ident())?);
                     ts.try_consume(Token::BracketClose)?;
                     ts.try_consume(Token::ParenClose)?;
                 }
