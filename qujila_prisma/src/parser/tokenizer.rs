@@ -57,6 +57,18 @@ impl TokenStream {
         }
     }
 
+    pub fn try_pop_csv_idents(&mut self) -> Result<Vec<String>, Cow<'static, str>> {
+        let mut idents = vec![];
+        if let Ok(first) = self.try_pop_ident() {
+            idents.push(first)
+        }
+        while self.try_consume(Token::Comma).is_ok() {
+            idents.push(self.try_pop_ident()?)
+        }
+        self.try_consume(Token::Comma).ok(); // allow trailing comma
+        Ok(idents)
+    }
+
     pub fn peek(&mut self) -> Option<&(Location, Token)> {
         self.tokens.peek()
     }
