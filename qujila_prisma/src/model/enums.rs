@@ -1,11 +1,20 @@
 pub struct EnumField {
-    pub default: Option<String>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<String>,
 }
 
 pub struct EnumListField {
-    pub default: Option<Vec<String>>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<Vec<String>>,
 }
 
 pub struct EnumOptionalField {
-    pub default: Option<String>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<String>,
 }

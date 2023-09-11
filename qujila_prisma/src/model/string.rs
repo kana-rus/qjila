@@ -1,13 +1,22 @@
 pub struct StringField {
-    pub default: Option<StringValue>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<StringValue>,
 }
 
 pub struct StringListField {
-    pub default: Option<Vec<StringValue>>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<Vec<StringValue>>,
 }
 
 pub struct StringOptionalField {
-    pub default: Option<StringValue>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<StringValue>,
 }
 
 pub enum StringValue {

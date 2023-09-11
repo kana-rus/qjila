@@ -1,13 +1,22 @@
 pub struct DateTimeField {
-    pub default: Option<DateTimeValue>
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<DateTimeValue>
 }
 
 pub struct DateTimeListField {
-    pub default: Option<Vec<DateTimeValue>>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default: Option<  Vec<DateTimeValue>>,
 }
 
 pub struct DateTimeOptionalField {
-    pub default: Option<DateTimeValue>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<DateTimeValue>,
 }
 
 pub enum DateTimeValue {

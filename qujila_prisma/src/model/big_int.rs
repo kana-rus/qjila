@@ -1,13 +1,22 @@
 pub struct BigIntField {
-    pub default: Option<BigIntValue>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<BigIntValue>,
 }
 
 pub struct BigIntListField {
-    pub default: Option<Vec<BigIntValue>>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<Vec<BigIntValue>>,
 }
 
 pub struct BigIntOptionalField {
-    pub default: Option<BigIntValue>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<BigIntValue>,
 }
 
 pub enum BigIntValue {

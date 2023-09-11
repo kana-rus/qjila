@@ -64,6 +64,12 @@ impl TokenStream {
         let err = self.current.Msg("Unexpectedly input ends with this");
         self.peek().ok_or_else(|| err)
     }
+    pub fn next_is(&mut self, expected: Token) -> bool {
+        match self.peek() {
+            None => false,
+            Some((_, t)) => t == &expected
+        }
+    }
 
     pub fn try_consume(&mut self, expected: Token) -> Result<(), Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
@@ -111,6 +117,7 @@ pub enum Token {
     Eq,
     At2,
     Colon,
+    Comma,
     Question,
     ParenOpen,
     ParenClose,
@@ -137,6 +144,7 @@ pub enum Token {
             Token::At2          => f.write_str("@@"),
             Token::Eq           => f.write_str("="),
             Token::Colon        => f.write_str(":"),
+            Token::Comma        => f.write_str(","),
             Token::Question     => f.write_str("?"),
             Token::ParenOpen    => f.write_str("("),
             Token::ParenClose   => f.write_str(")"),
@@ -182,6 +190,7 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
         match b {
             b'=' => {r.consume(1); push(Token::Eq)}
             b':' => {r.consume(1); push(Token::Colon)}
+            b',' => {r.consume(1); push(Token::Comma)}
             b'?' => {r.consume(1); push(Token::Question)}
             b'(' => {r.consume(1); push(Token::ParenOpen)}
             b')' => {r.consume(1); push(Token::ParenClose)}

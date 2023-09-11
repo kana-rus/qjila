@@ -1,11 +1,20 @@
 pub struct BytesField {
-    pub default: Option<String>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<String>,
 }
 
 pub struct BytesListField {
-    pub default: Option<Vec<String>>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<Vec<String>>,
 }
 
 pub struct BytesOptionalField {
-    pub default: Option<Vec<String>>,
+    pub map:       Option<String>,
+    pub id:        Option<()>,
+    pub unique:    Option<()>,
+    pub default:   Option<Vec<String>>,
 }
