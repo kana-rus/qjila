@@ -5,13 +5,11 @@ mod parser;
 mod generator_client;
 mod datasource;
 mod function;
-mod enums;
 mod model;
 
 use generator_client::GeneratorClient;
 use datasource::DataSource;
 use function::Function;
-use enums::Enum;
 use model::Model;
 
 use std::{borrow::Cow, format as f};
@@ -21,7 +19,6 @@ use parser::*;
 pub struct Schema {
     pub generator:  GeneratorClient,
     pub datasource: DataSource,
-    pub enums:      Vec<Enum>,
     pub models:     Vec<Model>,
 }
 
@@ -29,7 +26,6 @@ impl Parse for Schema {
     fn parse(ts: &mut TokenStream) -> Result<Self, Cow<'static, str>> {
         let mut generator  = None;
         let mut datasource = None;
-        let mut enums      = vec![];
         let mut models     = vec![];
 
         while let Some((loc, t)) = ts.peek() {
@@ -42,7 +38,7 @@ impl Parse for Schema {
                     if datasource.is_some() {return Err(loc.Msg("Duplicate definition of `datasource`"))}
                     datasource.replace(DataSource::parse(ts)?);
                 }
-                Token::Keyword(Keyword::_enum)  => enums .push(Enum::parse(ts)?),
+                Token::Keyword(Keyword::_enum)  => return Err(loc.Msg("In current version, qujila doesn't support `enum`!")),
                 Token::Keyword(Keyword::_model) => models.push(Model::parse(ts)?),
 
                 unknown => return Err(loc.Msg(f!("Unexpected token: `{unknown}`")))
@@ -52,7 +48,6 @@ impl Parse for Schema {
         Ok(Schema {
             generator:  generator .ok_or_else(|| Cow::Owned(f!("No `generator` found")))?,
             datasource: datasource.ok_or_else(|| Cow::Owned(f!("No `datasource` found")))?,
-            enums,
             models,
         })
     }
