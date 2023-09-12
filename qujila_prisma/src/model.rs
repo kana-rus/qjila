@@ -71,21 +71,21 @@ pub struct Field {
 }
 
 pub enum FieldSchema {
-    String         (AttributesWithDefault<StringValue>),
-    StringOptional (AttributesWithDefault<StringValue>),
-    StringList     (AttributesWithDefault<Vec<StringValue>>),
+    String         (Attributes<StringValue>),
+    StringOptional (Attributes<StringValue>),
+    StringList     (Attributes<Vec<StringValue>>),
 
     Boolean         (BooleanAttributes),
     BooleanList     (BooleanListAttributes),
     BooleanOptional (BooleanOptionalAttributes),
 
-    Int             (AttributesWithDefault<IntValue>),
-    IntOptional     (AttributesWithDefault<IntValue>),
-    IntList         (AttributesWithDefault<Vec<IntValue>>),
+    Int             (Attributes<IntValue>),
+    IntOptional     (Attributes<IntValue>),
+    IntList         (Attributes<Vec<IntValue>>),
 
-    BigInt          (AttributesWithDefault<BigIntValue>),
-    BigIntOptional  (AttributesWithDefault<BigIntValue>),
-    BigIntList      (AttributesWithDefault<Vec<BigIntValue>>),
+    BigInt          (Attributes<BigIntValue>),
+    BigIntOptional  (Attributes<BigIntValue>),
+    BigIntList      (Attributes<Vec<BigIntValue>>),
 
     Float           (FloatAttributes),
     FloatList       (FloatListAttributes),
@@ -95,9 +95,9 @@ pub enum FieldSchema {
     DecimalList     (DecimalListAttributes),
     DecimalOptional (DecimalOptionalAttributes),
 
-    DateTime        (AttributesWithDefault<DateTimeValue>),
-    DateTimeOptional(AttributesWithDefault<DateTimeValue>),
-    DateTimeList    (AttributesWithDefault<Vec<DateTimeValue>>),
+    DateTime        (Attributes<DateTimeValue>),
+    DateTimeOptional(Attributes<DateTimeValue>),
+    DateTimeList    (Attributes<Vec<DateTimeValue>>),
 
     Bytes           (BytesAttributes),
     BytesList       (BytesListAttributes),
@@ -108,48 +108,14 @@ pub enum FieldSchema {
     ModelOptional   { model_name: String, relation: Option<Relation> },
 }
 
-pub struct Attributes {
-    pub id:        bool,
-    pub unique:    bool,
-    pub map:       Option<String>,
-} impl Parse for Attributes {
-    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
-        let mut A = Attributes {
-            id:      false,
-            unique:  false,
-            map:     None,
-        };
-
-        while ts.try_consume(Token::At).is_ok() {
-            match &*ts.try_pop_ident()? {
-                "id"      => A.id     = true,
-                "unique"  => A.unique = true,
-                "map"     => {
-                    ts.try_consume(Token::ParenOpen)?;
-                    let map_to = ts.try_pop_string_literal()?;
-                    ts.try_consume(Token::ParenClose)?;
-
-                    if A.map.is_some_and(|s| s == map_to) {
-                        return Err(ts.current.Msg("Duplicate declaring `map` attributes"))
-                    }
-                    A.map = Some(map_to)
-                }
-                other => return Err(ts.current.Msg(f!("Expected one of `id`, `unique`, `map` but found `{other}`")))
-            }
-        }
-
-        Ok(A)
-    }
-}
-
-pub struct AttributesWithDefault<T: Parse> {
+pub struct Attributes<T: Parse> {
     pub id:        bool,
     pub unique:    bool,
     pub map:       Option<String>,
     pub default:   Option<T>,
-} impl<T: Parse> Parse for AttributesWithDefault<T> {
+} impl<T: Parse> Parse for Attributes<T> {
     fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
-        let mut A = AttributesWithDefault {
+        let mut A = Attributes {
             id:      false,
             unique:  false,
             map:     None,
