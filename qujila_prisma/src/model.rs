@@ -1,15 +1,4 @@
-mod string;
-mod boolean;
-mod int;
-mod big_int;
-mod float;
-mod decimal;
-mod enums;
-mod date_time;
-mod bytes;
-
 use crate::*;
-use {string::*, boolean::*, int::*, big_int::*, float::*, decimal::*, enums::*, date_time::*, bytes::*};
 
 
 pub struct Model {
@@ -82,21 +71,21 @@ pub struct Field {
 }
 
 pub enum FieldSchema {
-    String         (StringAttributes),
-    StringList     (StringListAttributes),
-    StringOptional (StringOptionalAttributes),
+    String         (AttributesWithDefault<StringValue>),
+    StringOptional (AttributesWithDefault<StringValue>),
+    StringList     (AttributesWithDefault<Vec<StringValue>>),
 
     Boolean         (BooleanAttributes),
     BooleanList     (BooleanListAttributes),
     BooleanOptional (BooleanOptionalAttributes),
 
-    Int             (IntAttributes),
-    IntList         (IntListAttributes),
-    IntOptional     (IntOptionalAttributes),
+    Int             (AttributesWithDefault<IntValue>),
+    IntOptional     (AttributesWithDefault<IntValue>),
+    IntList         (AttributesWithDefault<Vec<IntValue>>),
 
-    BigInt          (BigIntAttributes),
-    BigIntList      (BigIntListAttributes),
-    BigIntOptional  (BigIntOptionalAttributes),
+    BigInt          (AttributesWithDefault<BigIntValue>),
+    BigIntOptional  (AttributesWithDefault<BigIntValue>),
+    BigIntList      (AttributesWithDefault<Vec<BigIntValue>>),
 
     Float           (FloatAttributes),
     FloatList       (FloatListAttributes),
@@ -106,13 +95,9 @@ pub enum FieldSchema {
     DecimalList     (DecimalListAttributes),
     DecimalOptional (DecimalOptionalAttributes),
 
-    Enum            (EnumAttributes),
-    EnumList        (EnumListAttributes),
-    EnumOptional    (EnumOptionalAttributes),
-
-    DateTime        (DateTimeAttributes),
-    DateTimeList    (DateTimeListAttributes),
-    DateTimeOptional(DateTimeOptionalAttributes),
+    DateTime        (AttributesWithDefault<DateTimeValue>),
+    DateTimeOptional(AttributesWithDefault<DateTimeValue>),
+    DateTimeList    (AttributesWithDefault<Vec<DateTimeValue>>),
 
     Bytes           (BytesAttributes),
     BytesList       (BytesListAttributes),
@@ -121,6 +106,160 @@ pub enum FieldSchema {
     Model           { model_name: String, relation: Option<Relation> },
     ModelList       { model_name: String, relation: Option<Relation> },
     ModelOptional   { model_name: String, relation: Option<Relation> },
+}
+
+pub struct Attributes {
+    pub id:        bool,
+    pub unique:    bool,
+    pub map:       Option<String>,
+} impl Parse for Attributes {
+    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        let mut A = Attributes {
+            id:      false,
+            unique:  false,
+            map:     None,
+        };
+
+        while ts.try_consume(Token::At).is_ok() {
+            match &*ts.try_pop_ident()? {
+                "id"      => A.id     = true,
+                "unique"  => A.unique = true,
+                "map"     => {
+                    ts.try_consume(Token::ParenOpen)?;
+                    let map_to = ts.try_pop_string_literal()?;
+                    ts.try_consume(Token::ParenClose)?;
+
+                    if A.map.is_some_and(|s| s == map_to) {
+                        return Err(ts.current.Msg("Duplicate declaring `map` attributes"))
+                    }
+                    A.map = Some(map_to)
+                }
+                other => return Err(ts.current.Msg(f!("Expected one of `id`, `unique`, `map` but found `{other}`")))
+            }
+        }
+
+        Ok(A)
+    }
+}
+
+pub struct AttributesWithDefault<T: Parse> {
+    pub id:        bool,
+    pub unique:    bool,
+    pub map:       Option<String>,
+    pub default:   Option<T>,
+} impl<T: Parse> Parse for AttributesWithDefault<T> {
+    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        let mut A = AttributesWithDefault {
+            id:      false,
+            unique:  false,
+            map:     None,
+            default: None,
+        };
+
+        while ts.try_consume(Token::At).is_ok() {
+            match &*ts.try_pop_ident()? {
+                "id"      => A.id     = true,
+                "unique"  => A.unique = true,
+                "map"     => {
+                    ts.try_consume(Token::ParenOpen)?;
+                    let map_to = ts.try_pop_string_literal()?;
+                    ts.try_consume(Token::ParenClose)?;
+
+                    if A.map.is_some_and(|s| s == map_to) {
+                        return Err(ts.current.Msg("Duplicate declaring `map` attributes"))
+                    }
+                    A.map = Some(map_to)
+                }
+                "default" => {
+                    ts.try_consume(Token::ParenOpen)?;
+                    A.default = Some(T::parse(ts)?);
+                    ts.try_consume(Token::ParenClose)?;
+                }
+                other => return Err(ts.current.Msg(f!("Expected one of `id`, `unique`, `map`, `default` but found `{other}`")))
+            }
+        }
+
+        Ok(A)
+    }
+}
+
+pub enum StringValue {
+    value(String),
+    cuid,
+    uuid,
+} impl Parse for StringValue {
+    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        if let Ok(value) = ts.try_pop_ident() {
+            Ok(Self::value(value))
+        } else {
+            let function = match &*ts.try_pop_ident()? {
+                "cuid" => Self::cuid,
+                "uuid" => Self::uuid,
+                other  => return Err(ts.current.Msg(f!("Expected string literal or `cuid()`, `uuid()` buf found `{other}`")))
+            };
+            ts.try_consume(Token::ParenOpen)?;
+            ts.try_consume(Token::ParenClose)?;
+            Ok(function)
+        }
+    }
+}
+
+pub enum IntValue {
+    value(i32),
+    autoincrement,
+} impl Parse for IntValue {
+    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        if let Ok(value) = ts.try_pop_integer_litreral() {
+            Ok(Self::value(
+                value.try_into().map_err(|e| ts.current.Msg(f!("{value} is not `Int`: {e}")))?
+            ))
+        } else {
+            let function = match &*ts.try_pop_ident()? {
+                "autoincrement" => Self::autoincrement,
+                other => return Err(ts.current.Msg(f!("Expected `autoincrement` buf founf `{other}`")))
+            };
+            ts.try_consume(Token::ParenOpen)?;
+            ts.try_consume(Token::ParenClose)?;
+            Ok(function)
+        }
+    }
+}
+
+pub enum BigIntValue {
+    value(i64),
+    autoincrement,
+} impl Parse for BigIntValue {
+    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        if let Ok(value) = ts.try_pop_integer_litreral() {
+            Ok(Self::value(
+                value.try_into().map_err(|e| ts.current.Msg(f!("{value} is not `BigInt`: {e}")))?
+            ))
+        } else {
+            let function = match &*ts.try_pop_ident()? {
+                "autoincrement" => Self::autoincrement,
+                other => return Err(ts.current.Msg(f!("Expected `autoincrement` buf founf `{other}`")))
+            };
+            ts.try_consume(Token::ParenOpen)?;
+            ts.try_consume(Token::ParenClose)?;
+            Ok(function)
+        }
+    }
+}
+
+pub enum DateTimeValue {
+    now,
+    updatedAt,
+} impl Parse for DateTimeValue {
+    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        let function = match &*ts.try_pop_ident()? {
+            "now"       => Self::now,
+            "updatedAt" => Self::updatedAt,
+            other => return Err(ts.current.Msg(f!("Expected one of `now`, `updatedAt` but found `{other}`")))
+        };
+        ts.try_consume(Token::ParenOpen)?;
+        ts.try_consume(Token::ParenClose)?;
+        Ok(function)
+    }
 }
 
 pub struct Relation {
@@ -241,18 +380,6 @@ impl Parse for FieldSchema {
                     Ok(Self::DecimalOptional(DecimalOptionalAttributes::parse(ts)?))
                 }
                 _ => Ok(Self::Decimal(DecimalAttributes::parse(ts)?))
-            }
-            "Enum" => match &ts.try_peek()?.1 {
-                Token::BracketOpen => {
-                    ts.try_consume(Token::BracketOpen)?;
-                    ts.try_consume(Token::BracketClose)?;
-                    Ok(Self::EnumList(EnumListAttributes::parse(ts)?))
-                }
-                Token::Question => {
-                    ts.try_consume(Token::Question)?;
-                    Ok(Self::EnumOptional(EnumOptionalAttributes::parse(ts)?))
-                }
-                _ => Ok(Self::Enum(EnumAttributes::parse(ts)?))
             }
             "DateTime" => match &ts.try_peek()?.1 {
                 Token::BracketOpen => {

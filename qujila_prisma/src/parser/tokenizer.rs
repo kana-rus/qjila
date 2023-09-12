@@ -49,6 +49,13 @@ impl TokenStream {
             another => Err(loc.Msg(f!("Expected an identifier but found `{another}`")))
         }
     }
+    pub fn try_pop_integer_litreral(&mut self) -> Result<i128, Cow<'static, str>> {
+        let (loc, t) = self.try_peek()?;
+        match t {
+            Token::Literal(Lit::Integer(_))  => {let (_, Token::Literal(Lit::Integer(i))) = self.pop_unchecked() else {unsafe {unreachable_unchecked()}}; Ok(i)}
+            other => Err(loc.Msg(f!("Expected an integer literal but found `{other}`")))
+        }
+    }
     pub fn try_pop_string_literal(&mut self) -> Result<String, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
         match t {
