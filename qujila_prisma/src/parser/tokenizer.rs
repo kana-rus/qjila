@@ -49,6 +49,7 @@ impl TokenStream {
             another => Err(loc.Msg(f!("Expected an identifier but found `{another}`")))
         }
     }
+
     pub fn try_pop_integer_litreral(&mut self) -> Result<i128, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
         match t {
@@ -61,6 +62,20 @@ impl TokenStream {
         match t {
             Token::Literal(Lit::Str(_)) => {let (_, Token::Literal(Lit::Str(s))) = self.pop_unchecked() else {unsafe {unreachable_unchecked()}}; Ok(s)}
             other => Err(loc.Msg(f!("Expected a string literal but found `{other}`")))
+        }
+    }
+    pub fn try_pop_decimal_literal(&mut self) -> Result<f64, Cow<'static, str>> {
+        let (loc, t) = self.try_peek()?;
+        match t {
+            Token::Literal(Lit::Decimal(_)) => {let (_, Token::Literal(Lit::Decimal(d))) = self.pop_unchecked() else {unsafe {unreachable_unchecked()}}; Ok(d)}
+            other => Err(loc.Msg(f!("Expected a decimal literal but found `{other}`")))
+        }
+    }
+    pub fn try_pop_boolean_literal(&mut self) -> Result<bool, Cow<'static, str>> {
+        let (loc, t) = self.try_peek()?;
+        match t {
+            Token::Literal(Lit::Bool(_)) => {let (_, Token::Literal(Lit::Bool(b))) = self.pop_unchecked() else {unsafe {unreachable_unchecked()}}; Ok(b)}
+            other => Err(loc.Msg(f!("Expected `true` or `false` but found `{other}`")))
         }
     }
 

@@ -75,9 +75,9 @@ pub enum FieldSchema {
     StringOptional (Attributes<StringValue>),
     StringList     (Attributes<Vec<StringValue>>),
 
-    Boolean         (BooleanAttributes),
-    BooleanList     (BooleanListAttributes),
-    BooleanOptional (BooleanOptionalAttributes),
+    Boolean         (Attributes<BooleanValue>),
+    BooleanOptional (Attributes<BooleanValue>),
+    BooleanList     (Attributes<Vec<BooleanValue>>),
 
     Int             (Attributes<IntValue>),
     IntOptional     (Attributes<IntValue>),
@@ -87,21 +87,21 @@ pub enum FieldSchema {
     BigIntOptional  (Attributes<BigIntValue>),
     BigIntList      (Attributes<Vec<BigIntValue>>),
 
-    Float           (FloatAttributes),
-    FloatList       (FloatListAttributes),
-    FloatOptional   (FloatOptionalAttributes),
+    Float           (Attributes<FloatValue>),
+    FloatOptional   (Attributes<FloatValue>),
+    FloatList       (Attributes<Vec<FloatValue>>),
 
-    Decimal         (DecimalAttributes),
-    DecimalList     (DecimalListAttributes),
-    DecimalOptional (DecimalOptionalAttributes),
+    Decimal         (Attributes<DecimalValue>),
+    DecimalOptional (Attributes<DecimalValue>),
+    DecimalList     (Attributes<Vec<DecimalValue>>),
 
     DateTime        (Attributes<DateTimeValue>),
-    DateTimeOptional(Attributes<DateTimeValue>),
     DateTimeList    (Attributes<Vec<DateTimeValue>>),
+    DateTimeOptional(Attributes<DateTimeValue>),
 
-    Bytes           (BytesAttributes),
-    BytesList       (BytesListAttributes),
-    BytesOptional   (BytesOptionalAttributes),
+    Bytes           (Attributes<BytesValue>),
+    BytesOptional   (Attributes<BytesValue>),
+    BytesList       (Attributes<Vec<BytesValue>>),
 
     Model           { model_name: String, relation: Option<Relation> },
     ModelList       { model_name: String, relation: Option<Relation> },
@@ -150,13 +150,13 @@ pub struct Attributes<T: Parse> {
 }
 
 pub enum StringValue {
-    value(String),
+    literal(String),
     cuid,
     uuid,
 } impl Parse for StringValue {
     fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
         if let Ok(value) = ts.try_pop_ident() {
-            Ok(Self::value(value))
+            Ok(Self::literal(value))
         } else {
             let function = match &*ts.try_pop_ident()? {
                 "cuid" => Self::cuid,
@@ -170,13 +170,23 @@ pub enum StringValue {
     }
 }
 
+pub enum BooleanValue {
+    literal(bool)
+} impl Parse for BooleanValue {
+    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        Ok(Self::literal(
+            ts.try_pop_boolean_literal()?
+        ))
+    }
+}
+
 pub enum IntValue {
-    value(i32),
+    literal(i32),
     autoincrement,
 } impl Parse for IntValue {
     fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
         if let Ok(value) = ts.try_pop_integer_litreral() {
-            Ok(Self::value(
+            Ok(Self::literal(
                 value.try_into().map_err(|e| ts.current.Msg(f!("{value} is not `Int`: {e}")))?
             ))
         } else {
@@ -192,12 +202,12 @@ pub enum IntValue {
 }
 
 pub enum BigIntValue {
-    value(i64),
+    literal(i64),
     autoincrement,
 } impl Parse for BigIntValue {
     fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
         if let Ok(value) = ts.try_pop_integer_litreral() {
-            Ok(Self::value(
+            Ok(Self::literal(
                 value.try_into().map_err(|e| ts.current.Msg(f!("{value} is not `BigInt`: {e}")))?
             ))
         } else {
@@ -209,6 +219,26 @@ pub enum BigIntValue {
             ts.try_consume(Token::ParenClose)?;
             Ok(function)
         }
+    }
+}
+
+pub enum FloatValue {
+    literal(f64)
+} impl Parse for FloatValue {
+    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        Ok(Self::literal(
+            ts.try_pop_decimal_literal()?
+        ))
+    }
+}
+
+pub enum DecimalValue {
+    literal(f64)
+} impl Parse for DecimalValue {
+    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        Ok(Self::literal(
+            ts.try_pop_decimal_literal()?
+        ))
     }
 }
 
@@ -225,6 +255,16 @@ pub enum DateTimeValue {
         ts.try_consume(Token::ParenOpen)?;
         ts.try_consume(Token::ParenClose)?;
         Ok(function)
+    }
+}
+
+pub enum BytesValue {
+    literal(String)
+} impl Parse for BytesValue {
+    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        Ok(Self::literal(
+            ts.try_pop_string_literal()?
+        ))
     }
 }
 
