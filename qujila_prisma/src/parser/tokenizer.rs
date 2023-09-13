@@ -248,7 +248,7 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
                 Err(_) => push(Token::Ident(r.parse_ident()?)),
             }
 
-            b't' | b'f' => match r.parse_oneof_keywords(["false", "true"]) {
+            b'f' | b't' => match r.parse_oneof_keywords(["false", "true"]) {
                 Ok(0)  => push(Token::Literal(Lit::Bool(false))),
                 Ok(1)  => push(Token::Literal(Lit::Bool(true))),
                 Ok(_)  => unsafe {unreachable_unchecked()}
@@ -260,7 +260,7 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
             }
             b'0'..=b'9' => {
                 let integer = r.parse_integer_literal()?;
-                if r.parse_keyword(".").is_ok() {
+                if r.parse_keyword(".").is_err() {
                     push(Token::Literal(Lit::Integer(integer)));
                     continue
                 }
@@ -270,7 +270,7 @@ pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
                 let mut min_degit = 1.0_f64;
                 while let Some(d) = r.pop_if(|b| b.is_ascii_digit()) {
                     min_degit /= 10.0;
-                    abs += (d as f64) / min_degit
+                    abs += (d as f64) * min_degit
                 }
                 if min_degit == 1.0 {
                     return Err(Cow::Owned(f!("Unexpectedly end of float literal: `{integer}.`")))

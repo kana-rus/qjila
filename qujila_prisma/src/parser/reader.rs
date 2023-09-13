@@ -58,10 +58,10 @@ impl Reader {
 
         &self.content[start_idx..(start_idx + add_idx)]
     }
-    pub fn consume(&mut self, max_bytes: usize) {
+    #[inline] pub fn consume(&mut self, max_bytes: usize) {
         let _ = self.read(max_bytes);
     }
-    pub fn pop_if(&mut self, condition: impl Fn(&u8)->bool) -> Option<u8> {
+    #[inline] pub fn pop_if(&mut self, condition: impl Fn(&u8)->bool) -> Option<u8> {
         let value = self.peek()?;
         condition(value).then_some(*value)
     }
@@ -75,12 +75,6 @@ impl Reader {
 
     #[inline] pub fn peek(&self) -> Option<&u8> {
         self.remained().first()
-    }
-    pub fn try_peek(&self) -> Result<&u8, Cow<'static, str>> {
-        self.peek().ok_or_else(|| Cow::Borrowed("Unexpectedly end of input"))
-    }
-    pub fn is_empty(&self) -> bool {
-        self.content.is_empty()
     }
 
     pub fn skip_whitespace(&mut self) {
