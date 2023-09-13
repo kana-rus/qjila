@@ -211,7 +211,7 @@ pub enum Keyword {
 
 
 pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
-    let mut r = Reader::new(file)?;
+    let mut r = Reader::file(file)?;
 
     let mut tokens = Vec::new();
     loop {

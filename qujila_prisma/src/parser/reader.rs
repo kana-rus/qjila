@@ -9,8 +9,7 @@ pub struct Reader {
 }
 
 impl Reader {
-    pub fn new(path: PathBuf) -> Result<Self, Cow<'static, str>> {
-        let content = fs::read(path.as_path()).map_err(|e| Cow::Owned(f!("Can't read file `{}`: {e}", path.display())))?;
+    pub fn new(content: Vec<u8>) -> Result<Self, Cow<'static, str>> {
         Ok(Self {
             content,
             current_idx:    0,
@@ -18,13 +17,17 @@ impl Reader {
             current_column: 1,
         })
     }
+    pub fn file(path: PathBuf) -> Result<Self, Cow<'static, str>> {
+        let content = fs::read(path.as_path()).map_err(|e| Cow::Owned(f!("Can't read file `{}`: {e}", path.display())))?;
+        Self::new(content)
+    }
     pub fn Msg(&self, message: impl AsRef<str>) -> Cow<'static, str> {
         Cow::Owned(f!("[{}:{}] {}", self.line(), self.column(), message.as_ref()))
     }
 }
 
 impl Reader {
-    #[inline(always)] fn remained(&self) -> &[u8] {
+    #[inline(always)] pub(super) fn remained(&self) -> &[u8] {
         &self.content[self.current_idx..]
     }
 

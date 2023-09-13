@@ -1,6 +1,8 @@
 mod reader;
 mod tokenizer;
 
+#[cfg(test)] mod reader_test;
+
 pub use tokenizer::*;
 
 
