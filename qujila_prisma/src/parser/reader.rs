@@ -68,16 +68,12 @@ impl Reader {
         let value = self.peek()?;
         condition(value).then_some(*value)
     }
-    pub fn read_while(&mut self, condition: impl Fn(&u8)->bool) -> &[u8] {
-        let mut until = 0;
-        while self.remained().get(until).is_some_and(&condition) {
-            until += 1
-        }
-        self.read(until)
-    }
 
     #[inline] pub fn peek(&self) -> Option<&u8> {
         self.remained().first()
+    }
+    #[inline] pub fn peek2(&self) -> Option<&u8> {
+        self.remained().get(1)
     }
 
     pub fn skip_whitespace(&mut self) {

@@ -21,7 +21,7 @@ impl TokenStream {
     pub(super/* for test */) fn new(mut tokens: Vec<(Location, Token)>) -> Self {
         tokens.reverse();
         Self {
-            current: Location { line: 1, column: 0 },
+            current: Location { line: 1, column: 1 },
             tokens,
         }
     }
@@ -155,9 +155,10 @@ pub enum Token {
     Literal(Lit),
     Keyword(Keyword),
 
-    At,
     Eq,
+    At,
     At2,
+    Dot,
     Colon,
     Comma,
     Question,
@@ -182,9 +183,10 @@ pub enum Token {
             Token::Keyword(Keyword::_generator)  => f.write_str("generator"),
             Token::Keyword(Keyword::_datasource) => f.write_str("datasource"),
 
+            Token::Eq           => f.write_str("="),
             Token::At           => f.write_str("@"),
             Token::At2          => f.write_str("@@"),
-            Token::Eq           => f.write_str("="),
+            Token::Dot          => f.write_str("."),
             Token::Colon        => f.write_str(":"),
             Token::Comma        => f.write_str(","),
             Token::Question     => f.write_str("?"),
@@ -232,6 +234,7 @@ pub(super) fn tokenize(mut r: Reader) -> Result<TokenStream, Cow<'static, str>> 
         let Some(b) = r.peek() else {return Ok(TokenStream::new(tokens))};
         match b {
             b'=' => {r.consume(1); push(Token::Eq)}
+            b'.' => {r.consume(1); push(Token::Dot)}
             b':' => {r.consume(1); push(Token::Colon)}
             b',' => {r.consume(1); push(Token::Comma)}
             b'?' => {r.consume(1); push(Token::Question)}
@@ -242,7 +245,7 @@ pub(super) fn tokenize(mut r: Reader) -> Result<TokenStream, Cow<'static, str>> 
             b'[' => {r.consume(1); push(Token::BracketOpen)}
             b']' => {r.consume(1); push(Token::BracketClose)}
 
-            b'@' => match r.peek() {
+            b'@' => match r.peek2() {
                 None       => {r.consume(1); push(Token::At); return Ok(TokenStream::new(tokens))}
                 Some(b'@') => {r.consume(2); push(Token::At2)}
                 Some(_)    => {r.consume(1); push(Token::At)}
@@ -289,10 +292,7 @@ pub(super) fn tokenize(mut r: Reader) -> Result<TokenStream, Cow<'static, str>> 
                     if not_negative { abs } else { - abs }
                 )))
             }
-            _ => {
-                let unknown_token = String::from_utf8_lossy(r.read_while(|b| !b.is_ascii_whitespace()));
-                return Err(Cow::Owned(f!("Unnkown token: `{unknown_token}`")))
-            }
+            _ => push(Token::Ident(r.parse_ident()?))
         }
     }
 }
