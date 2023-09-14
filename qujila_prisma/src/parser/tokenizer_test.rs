@@ -1,14 +1,59 @@
 use super::{tokenizer::*, reader::*};
 use std::format as f;
 fn bytes(s: &str) -> Vec<u8> {
-    s.to_string().into_bytes()
+    s.trim().to_string().into_bytes()
+}
+macro_rules! assert_eq {
+    ($left:expr, $right:expr) => {
+        {let location = f!("{}:{}:{}", file!(), line!(), column!());
+            let left  = $left;
+            let right = $right;
+            if left != right {
+                panic!("\n\
+                    ---- {location} ----\n\
+                    [left]  {left:#?}\n\
+                    [right] {right:#?}\n\
+                    \n\
+                ")
+            }
+        }
+    };
+}
+
+
+#[test] fn test_tokenize_datasource() {
+    let input = bytes(r#"
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+    "#);
+
+    assert_eq!(tokenize(Reader::new(input).unwrap()).unwrap(), TokenStream::new(vec![
+        (Location { line:1, column:1  }, Token::Keyword(Keyword::_datasource)),
+        (Location { line:1, column:12 }, Token::Ident(f!("db"))),
+        (Location { line:1, column:15 }, Token::BraceOpen),
+
+        (Location { line:2, column:3  }, Token::Ident(f!("provider"))),
+        (Location { line:2, column:12 }, Token::Eq),
+        (Location { line:2, column:14 }, Token::Literal(Lit::Str(f!("postgres")))),
+
+        (Location { line:3, column:3  }, Token::Ident(f!("url"))),
+        (Location { line:3, column:12 }, Token::Eq),
+        (Location { line:3, column:14 }, Token::Ident(f!("env"))),
+        (Location { line:3, column:17 }, Token::ParenOpen),
+        (Location { line:3, column:18 }, Token::Literal(Lit::Str(f!("DATABASE_URL")))),
+        (Location { line:3, column:32 }, Token::ParenClose),
+
+        (Location { line:4, column:1  }, Token::BraceClose),
+    ]));
 }
 
 #[test] fn test_tokenize_model() {
-    let input = bytes(
-"model Post {
-}"
-    );
+    let input = bytes(r#"
+model Post {
+}
+    "#);
 
     assert_eq!(tokenize(Reader::new(input).unwrap()).unwrap(), TokenStream::new(vec![
         (Location { line:1, column:1  }, Token::Keyword(Keyword::_model)),
@@ -19,11 +64,11 @@ fn bytes(s: &str) -> Vec<u8> {
     ]));
 
 
-    let input = bytes(
-"model Post {
+    let input = bytes(r#"
+model Post {
   title String @db.VarChar(200)
-}"
-    );
+}
+    "#);
 
     assert_eq!(tokenize(Reader::new(input).unwrap()).unwrap(), TokenStream::new(vec![
         (Location { line:1, column:1  }, Token::Keyword(Keyword::_model)),
@@ -42,16 +87,4 @@ fn bytes(s: &str) -> Vec<u8> {
 
         (Location { line:3, column:1  }, Token::BraceClose),
     ]));
-
-//     let input =
-// "model Post {
-//   title     String @db.VarChar(200)
-//   n_authors Int    @default(1)
-//   z_flag    Int    @default(-42)
-// }".to_string().into_bytes();
-// 
-//     assert_eq!(tokenize(Reader::new(input).unwrap()).unwrap(), TokenStream::new(vec![
-//         (Location { line:1, column:0 }, Token::Keyword(Keyword::_model)),
-//         (Location { line:1, column:6 }, Token::Ident(f!("Post"))),
-//     ]));
 }
