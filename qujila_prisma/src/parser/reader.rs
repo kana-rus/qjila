@@ -104,13 +104,14 @@ impl Reader {
     }
     pub fn parse_ident(&mut self) -> Result<String, Cow<'static, str>> {
         let mut ident_len = 0;
-        while !self.remained()[ident_len].is_ascii_whitespace() {
+        while matches!(self.remained()[ident_len], b'a'..=b'z' | b'A'..=b'Z' | b'_') {
             ident_len += 1
         }
         if ident_len == 0 {return Err(self.Msg("Expected an ident but not found"))}
 
+        let ident = unsafe { String::from_utf8_unchecked(self.remained()[..ident_len].to_vec()) };
         self.consume(ident_len);
-        Ok(unsafe { String::from_utf8_unchecked(self.remained()[..ident_len].to_vec()) })
+        Ok(ident)
     }
     pub fn parse_string_literal(&mut self) -> Result<String, Cow<'static, str>> {
         self.parse_keyword("\"")?;
@@ -131,13 +132,12 @@ impl Reader {
             let b = self.remained().first()
                 .ok_or_else(|| self.Msg("Expected an integer but not found"))?;
             match b {
-                b'0'..=b'9' => {integer = integer * 10 + (*b - b'0') as u64; degit += 1}
+                b'0'..=b'9' => {integer = integer * 10 + (*b - b'0') as u64; degit += 1; self.consume(1)}
                 _ => break,
             }
         }
         if degit == 0 {return Err(self.Msg("Expected an integer but not found"))}
 
-        self.consume(degit);
         Ok(integer)
     }
     pub fn parse_integer_literal(&mut self) -> Result<i128, Cow<'static, str>> {
