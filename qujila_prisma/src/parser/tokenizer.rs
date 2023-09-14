@@ -1,37 +1,44 @@
 use super::reader::{Reader};
 use std::{
     hint::unreachable_unchecked,
-    vec::IntoIter as Stream,
-    iter::Peekable,
     path::PathBuf,
     borrow::Cow,
     format as f,
 };
 
 
+#[cfg_attr(test, derive(PartialEq, Debug))]
 pub struct TokenStream {
     pub current: Location,
-    tokens:      Peekable<Stream<(Location, Token)>>
+
+    /// reversed tokens
+    tokens:      Vec<(Location, Token)>
 }
 
 impl TokenStream {
-    fn new(tokens: Vec<(Location, Token)>) -> Self {
+    pub(super/* for test */) fn new(mut tokens: Vec<(Location, Token)>) -> Self {
+        tokens.reverse();
         Self {
             current: Location { line: 1, column: 0 },
-            tokens:  tokens.into_iter().peekable(),
+            tokens,
         }
+    }
+
+    pub fn pop(&mut self) -> Option<(Location, Token)> {
+        let (loc, t) = self.tokens.pop()?;
+        self.current = loc;
+        Some((loc, t))
     }
     fn pop_unchecked(&mut self) -> (Location, Token) {
         unsafe {self.pop().unwrap_unchecked()}
     }
+
+    pub fn peek(&self) -> Option<&(Location, Token)> {
+        self.tokens.last()
+    }
 }
 
 impl TokenStream {
-    pub fn pop(&mut self) -> Option<(Location, Token)> {
-        let (loc, t) = self.tokens.next()?;
-        self.current = loc;
-        Some((loc, t))
-    }
     pub fn pop_if(&mut self, condition: impl Fn(&Token)->bool) -> Option<(Location, Token)> {
         self.peek().is_some_and(|(_, t)| condition(t)).then(|| self.pop_unchecked())
     }
@@ -91,9 +98,6 @@ impl TokenStream {
         Ok(csv)
     }
 
-    pub fn peek(&mut self) -> Option<&(Location, Token)> {
-        self.tokens.peek()
-    }
     pub fn try_peek(&mut self) -> Result<&(Location/* of token you peeked */, Token), Cow<'static, str>> {
         let err = self.current.Msg("Unexpectedly input ends with this");
         self.peek().ok_or_else(|| err)
@@ -122,11 +126,12 @@ impl TokenStream {
     }
 
     pub fn is_empty(&mut self) -> bool {
-        self.tokens.peek().is_none()
+        self.peek().is_none()
     }
 }
 
 #[derive(Clone, Copy)]
+#[cfg_attr(test, derive(PartialEq, Debug))]
 pub struct Location {
     pub line:   usize,
     pub column: usize,
@@ -142,6 +147,7 @@ pub struct Location {
 }
 
 #[derive(PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum Token {
     Ident  (String),
     Literal(Lit),
@@ -191,9 +197,7 @@ pub enum Token {
 }
 
 #[derive(PartialEq)]
-pub struct Ident(String);
-
-#[derive(PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum Lit {
     Str    (String),
     Bool   (bool),
@@ -202,6 +206,7 @@ pub enum Lit {
 }
 
 #[derive(PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum Keyword {
     _enum,
     _model,
@@ -210,9 +215,11 @@ pub enum Keyword {
 }
 
 
-pub fn tokenize(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
-    let mut r = Reader::file(file)?;
+pub fn tokenize_file(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
+    tokenize(Reader::file(file)?)
+}
 
+pub(super) fn tokenize(mut r: Reader) -> Result<TokenStream, Cow<'static, str>> {
     let mut tokens = Vec::new();
     loop {
         r.skip_whitespace();

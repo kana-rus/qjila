@@ -61,7 +61,7 @@ const _: () = {
             let schema_file_path = find_target_schema_file()?;
 
             <Schema as parser::Parse>::parse(
-                &mut tokenize(schema_file_path)?
+                &mut tokenize_file(schema_file_path)?
             )
         }
     }
