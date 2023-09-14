@@ -98,11 +98,11 @@ impl TokenStream {
         Ok(csv)
     }
 
-    pub fn try_peek(&mut self) -> Result<&(Location/* of token you peeked */, Token), Cow<'static, str>> {
+    pub fn try_peek(&self) -> Result<&(Location/* of token you peeked */, Token), Cow<'static, str>> {
         let err = self.current.Msg("Unexpectedly input ends with this");
         self.peek().ok_or_else(|| err)
     }
-    pub fn next_is(&mut self, expected: Token) -> bool {
+    pub fn next_is(&self, expected: Token) -> bool {
         match self.peek() {
             None => false,
             Some((_, t)) => t == &expected
@@ -125,7 +125,7 @@ impl TokenStream {
         }
     }
 
-    pub fn is_empty(&mut self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.peek().is_none()
     }
 }
