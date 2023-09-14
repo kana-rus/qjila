@@ -1,10 +1,12 @@
 use super::reader::{Reader};
 use std::{
-    hint::unreachable_unchecked,
     path::PathBuf,
     borrow::Cow,
     format as f,
 };
+fn __unreachable__() -> ! {
+    unsafe {::std::hint::unreachable_unchecked()}
+}
 
 
 #[cfg_attr(test, derive(PartialEq, Debug))]
@@ -52,7 +54,7 @@ impl TokenStream {
     pub fn try_pop_ident(&mut self) -> Result<String, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
         match t {
-            Token::Ident(_) => {let (_, Token::Ident(ident)) = self.pop_unchecked() else {unsafe {unreachable_unchecked()}}; Ok(ident)}
+            Token::Ident(_) => {let (_, Token::Ident(ident)) = self.pop_unchecked() else {__unreachable__()}; Ok(ident)}
             another => Err(loc.Msg(f!("Expected an identifier but found `{another}`")))
         }
     }
@@ -60,28 +62,28 @@ impl TokenStream {
     pub fn try_pop_integer_litreral(&mut self) -> Result<i128, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
         match t {
-            Token::Literal(Lit::Integer(_))  => {let (_, Token::Literal(Lit::Integer(i))) = self.pop_unchecked() else {unsafe {unreachable_unchecked()}}; Ok(i)}
+            Token::Literal(Lit::Integer(_))  => {let (_, Token::Literal(Lit::Integer(i))) = self.pop_unchecked() else {__unreachable__()}; Ok(i)}
             other => Err(loc.Msg(f!("Expected an integer literal but found `{other}`")))
         }
     }
     pub fn try_pop_string_literal(&mut self) -> Result<String, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
         match t {
-            Token::Literal(Lit::Str(_)) => {let (_, Token::Literal(Lit::Str(s))) = self.pop_unchecked() else {unsafe {unreachable_unchecked()}}; Ok(s)}
+            Token::Literal(Lit::Str(_)) => {let (_, Token::Literal(Lit::Str(s))) = self.pop_unchecked() else {__unreachable__()}; Ok(s)}
             other => Err(loc.Msg(f!("Expected a string literal but found `{other}`")))
         }
     }
     pub fn try_pop_decimal_literal(&mut self) -> Result<f64, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
         match t {
-            Token::Literal(Lit::Decimal(_)) => {let (_, Token::Literal(Lit::Decimal(d))) = self.pop_unchecked() else {unsafe {unreachable_unchecked()}}; Ok(d)}
+            Token::Literal(Lit::Decimal(_)) => {let (_, Token::Literal(Lit::Decimal(d))) = self.pop_unchecked() else {__unreachable__()}; Ok(d)}
             other => Err(loc.Msg(f!("Expected a decimal literal but found `{other}`")))
         }
     }
     pub fn try_pop_boolean_literal(&mut self) -> Result<bool, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
         match t {
-            Token::Literal(Lit::Bool(_)) => {let (_, Token::Literal(Lit::Bool(b))) = self.pop_unchecked() else {unsafe {unreachable_unchecked()}}; Ok(b)}
+            Token::Literal(Lit::Bool(_)) => {let (_, Token::Literal(Lit::Bool(b))) = self.pop_unchecked() else {__unreachable__()}; Ok(b)}
             other => Err(loc.Msg(f!("Expected `true` or `false` but found `{other}`")))
         }
     }
@@ -251,14 +253,14 @@ pub(super) fn tokenize(mut r: Reader) -> Result<TokenStream, Cow<'static, str>> 
                 Ok(1)  => push(Token::Keyword(Keyword::_model)),
                 Ok(2)  => push(Token::Keyword(Keyword::_generator)),
                 Ok(3)  => push(Token::Keyword(Keyword::_datasource)),
-                Ok(_)  => unsafe {unreachable_unchecked()}
+                Ok(_)  => __unreachable__(),
                 Err(_) => push(Token::Ident(r.parse_ident()?)),
             }
 
             b'f' | b't' => match r.parse_oneof_keywords(["false", "true"]) {
                 Ok(0)  => push(Token::Literal(Lit::Bool(false))),
                 Ok(1)  => push(Token::Literal(Lit::Bool(true))),
-                Ok(_)  => unsafe {unreachable_unchecked()}
+                Ok(_)  => __unreachable__(),
                 Err(_) => push(Token::Ident(r.parse_ident()?)),
             }
             b'"' => {
