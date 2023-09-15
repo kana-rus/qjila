@@ -13,14 +13,4 @@ keywords      = ["database", "async", "postgres", "mysql", "sqlite"]
 categories    = ["database", "asynchronous"]
 
 [dependencies]
-
-
-# [features]
-# rt_tokio     = ["sqlx/runtime-tokio-native-tls"]
-# rt_async-std = ["sqlx/runtime-async-std-native-tls"]
-# db_postgres  = ["sqlx/postgres"]
-# db_mysql     = ["sqlx/mysql"]
-# db_sqlite    = ["sqlx/sqlite"]
-# 
-# ## DEBUG
-# default = ["rt_tokio", "db_postgres"]
+qujila_lib    = { version = "0.1.0", path = "../qujila_lib" }

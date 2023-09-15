@@ -1,0 +1,15 @@
+[package]
+name          = "qujila_lib"
+version       = "0.1.0"
+edition       = "2021"
+authors       = ["kanarus <kanarus786@gmail.com>"]
+documentation = "https://docs.rs/qujila_lib"
+homepage      = "https://crates.io/crates/qujila_lib"
+repository    = "https://github.com/kana-rus/qujila_lib"
+readme        = "README.md"
+license       = "MIT"
+description   = ""
+keywords      = []
+categories    = []
+
+[dependencies]

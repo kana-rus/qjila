@@ -3,5 +3,12 @@
 version = 3
 
 [[package]]
+name = "qujila_lib"
+version = "0.1.0"
+
+[[package]]
 name = "qujila_prisma"
 version = "0.1.0"
+dependencies = [
+ "qujila_lib",
+]

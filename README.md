@@ -61,7 +61,9 @@ At now, `qujila` doesn't support using mutiple DB in one application.
 $ qujila sync
 ```
 
-This outputs migration history as SQL files in `qujila/migrations/`. In production, execute these migration files :
+This outputs migration history as SQL files in `qujila/migrations/`.
+
+In production environment, execute these migration files :
 
 ```sh
 $ qujila migrate
