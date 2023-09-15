@@ -4,11 +4,15 @@ use std::{borrow::Cow, format as f};
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct DataSource {
+    pub doc_comment: Option<String>,
+
     pub name:     String,
     pub provider: Provider,
     pub url:      String,
 } impl Parse for DataSource {
     fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        let doc_comment = ts.pop_doc_comment();
+
         ts.try_consume(Token::Keyword(Keyword::_datasource))?;
         let name = ts.try_pop_ident()?;
 
@@ -48,6 +52,7 @@ pub struct DataSource {
         ts.try_consume(Token::BraceClose)?;
 
         Ok(Self {
+            doc_comment,
             name:     name.to_owned(),
             provider: provider?,
             url:      url?
@@ -90,6 +95,7 @@ datasource db {
         "#); assert_eq!(
             DataSource::parse(&mut tokenize(Reader::new(input).unwrap()).unwrap()).unwrap(),
             DataSource {
+                doc_comment: None,
                 name:     f!("db"),
                 provider: Provider::postgresql,
                 url:      f!("MY_DB_URL"),
@@ -104,6 +110,31 @@ datasource db {
         "#); assert_eq!(
             &*DataSource::parse(&mut tokenize(Reader::new(input).unwrap()).unwrap()).unwrap_err(),
             &*f!("[3:14] Failed to fetch environment variable `DATABASE_URL`: {}", std::env::var("DATABASE_URL").unwrap_err())
+        );
+
+
+        let input = bytes(r#"
+/// This defines the datasource.
+/// Hello, my name is db!
+/// My provider is postgresql and the
+/// url of the database is "MY_DB_URL".
+datasource db {
+  provider = "postgresql"
+  url      = "MY_DB_URL"
+}
+        "#); assert_eq!(
+            DataSource::parse(&mut tokenize(Reader::new(input).unwrap()).unwrap()).unwrap(),
+            DataSource {
+                doc_comment: Some(r#"
+This defines the datasource.
+Hello, my name is db!
+My provider is postgresql and the
+url of the database is "MY_DB_URL".
+                "#.trim().to_string()),
+                name:     f!("db"),
+                provider: Provider::postgresql,
+                url:      f!("MY_DB_URL"),
+            }
         );
     }
 }

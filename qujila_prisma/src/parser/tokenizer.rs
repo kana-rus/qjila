@@ -44,6 +44,18 @@ impl TokenStream {
     pub fn pop_if(&mut self, condition: impl Fn(&Token)->bool) -> Option<(Location, Token)> {
         self.peek().is_some_and(|(_, t)| condition(t)).then(|| self.pop_unchecked())
     }
+    pub fn pop_doc_comment(&mut self) -> Option<String> {
+        let mut doc_comment = String::new();
+        while let Some(line) = self.pop_if(|t| matches!(t, Token::DocComment(_))) {
+            let (_, Token::DocComment(line)) = line else {__unreachable__()};
+            doc_comment.push_str(&line);
+            doc_comment.push('\n');
+        }
+        (!doc_comment.is_empty()).then(|| {
+            doc_comment.pop(/* trailing '\n' */); doc_comment
+        })
+    }
+
     pub fn try_pop(&mut self) -> Result<(Location, Token), Cow<'static, str>> {
         if self.peek().is_some() {
             Ok(self.pop_unchecked())
@@ -58,7 +70,6 @@ impl TokenStream {
             another => Err(loc.Msg(f!("Expected an identifier but found `{another}`")))
         }
     }
-
     pub fn try_pop_integer_litreral(&mut self) -> Result<i128, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
         match t {

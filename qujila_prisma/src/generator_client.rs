@@ -3,12 +3,16 @@ use crate::*;
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct GeneratorClient {
+    pub doc_comment: Option<String>,
+
     pub provider: String,
     pub output:   Option<String>,
 }
 
 impl Parse for GeneratorClient {
     fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
+        let doc_comment = ts.pop_doc_comment();
+
         ts.try_consume(Token::Keyword(Keyword::_generator))?;
         ts.try_consume_ident("client")?;
 
@@ -37,8 +41,9 @@ impl Parse for GeneratorClient {
         ts.try_consume(Token::BraceClose)?;
 
         Ok(Self {
+            doc_comment,
+            output,
             provider: provider.ok_or_else(|| Cow::Borrowed("No `provider` found in `generator`"))?,
-            output
         })
     }
 }
@@ -60,12 +65,18 @@ generator client {
         "#); assert_eq!(
             GeneratorClient::parse(&mut tokenize(Reader::new(input).unwrap()).unwrap()).unwrap(),
             GeneratorClient {
+                doc_comment: None,
                 provider: f!("qujila"),
                 output:   None,
             }
         );
 
         let input = bytes(r#"
+/// Hey, This is generator client for this
+/// schema file!
+/// The provider is "qujila", or Me, and
+/// generated files will be output in
+/// ../src/qujila directory.
 generator client {
   provider = "qujila"
   output   = "../src/qujila"
@@ -73,6 +84,13 @@ generator client {
         "#); assert_eq!(
             GeneratorClient::parse(&mut tokenize(Reader::new(input).unwrap()).unwrap()).unwrap(),
             GeneratorClient {
+                doc_comment: Some(r#"
+Hey, This is generator client for this
+schema file!
+The provider is "qujila", or Me, and
+generated files will be output in
+../src/qujila directory.
+                "#.trim().to_string()),
                 provider: f!("qujila"),
                 output:   Some(f!("../src/qujila")),
             }
