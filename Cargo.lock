@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "qujila"
+name = "qujila_prisma"
 version = "0.1.0"

@@ -1,7 +1,19 @@
 [package]
-name         = "qujila"
-version      = "0.1.0"
-edition      = "2021"
+name          = "qujila_prisma"
+version       = "0.1.0"
+edition       = "2021"
+authors       = ["kanarus <kanarus786@gmail.com>"]
+documentation = "https://docs.rs/qujila_prisma"
+homepage      = "https://crates.io/crates/qujila_prisma"
+repository    = "https://github.com/kana-rus/qujila_prisma"
+readme        = "../README.md"
+license       = "MIT"
+description   = "Prisma file parser for qujila DB library"
+keywords      = ["database", "async", "postgres", "mysql", "sqlite"]
+categories    = ["database", "asynchronous"]
+
+[dependencies]
+
 
 # [features]
 # rt_tokio     = ["sqlx/runtime-tokio-native-tls"]
