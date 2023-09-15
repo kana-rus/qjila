@@ -21,6 +21,32 @@ macro_rules! assert_eq {
 }
 
 
+
+#[test] fn test_tokenize_generator_client() {
+    let input = bytes(r#"
+generator client {
+  provider = "qujila"
+  output   = "../src/qujila/"
+}
+    "#);
+
+    assert_eq!(tokenize(Reader::new(input).unwrap()).unwrap(), TokenStream::new(vec![
+        (Location { line:1, column:1  }, Token::Keyword(Keyword::_generator)),
+        (Location { line:1, column:11 }, Token::Ident(f!("client"))),
+        (Location { line:1, column:18 }, Token::BraceOpen),
+
+        (Location { line:2, column:3  }, Token::Ident(f!("provider"))),
+        (Location { line:2, column:12 }, Token::Eq),
+        (Location { line:2, column:14 }, Token::Literal(Lit::Str(f!("qujila")))),
+
+        (Location { line:3, column:3  }, Token::Ident(f!("output"))),
+        (Location { line:3, column:12 }, Token::Eq),
+        (Location { line:3, column:14 }, Token::Literal(Lit::Str(f!("../src/qujila/")))),
+
+        (Location { line:4, column:1  }, Token::BraceClose),
+    ]));
+}
+
 #[test] fn test_tokenize_datasource() {
     let input = bytes(r#"
 datasource db {
