@@ -45,17 +45,28 @@ impl TokenStream {
         self.peek().is_some_and(|(_, t)| condition(t)).then(|| self.pop_unchecked())
     }
     pub fn pop_doc_comment(&mut self) -> Option<String> {
-        let mut doc_comment = String::new();
+        let mut lines = Vec::new();
         while let Some(line) = self.pop_if(|t| matches!(t, Token::DocComment(_))) {
             let (_, Token::DocComment(line)) = line else {__unreachable__()};
-            doc_comment.push_str(&line);
-            doc_comment.push('\n');
+            lines.push(line)
         }
-        (!doc_comment.is_empty()).then(|| {
-            doc_comment.pop(/* trailing '\n' */); doc_comment
+        (!lines.is_empty()).then(|| lines.join("\n"))
+    }
+    pub fn pop_doc_comment_on_current_line(&mut self) -> Option<String> {
+        let (Location { line, .. }, next) = self.peek()?;
+        if line != &self.current.line {return None}
+        if !matches!(next, Token::DocComment(_)) {return None}
+
+        (
+            line == &self.current.line &&
+            matches!(next, Token::DocComment(_))
+        )
+        .then(|| {
+            let (_, Token::DocComment(dc)) = self.pop_unchecked() else {__unreachable__()};
+            dc
         })
     }
-
+ 
     pub fn try_pop(&mut self) -> Result<(Location, Token), Cow<'static, str>> {
         if self.peek().is_some() {
             Ok(self.pop_unchecked())
@@ -272,7 +283,8 @@ pub(crate) fn tokenize(mut r: Reader) -> Result<TokenStream, Cow<'static, str>> 
                 (Some(b'/'), Some(b'/')) => {
                     r.consume(3); r.read_while(|b| b == &b' ');
 
-                    let doc_comment = r.read_while(|b| b != &b'\n');
+                    let mut doc_comment = r.read_while(|b| b != &b'\n');
+                    while doc_comment.ends_with(' ') {doc_comment.pop();}
                     push(Token::DocComment(doc_comment))
                 }
                 (Some(b'/'), _) => {

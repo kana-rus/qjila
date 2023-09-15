@@ -1,7 +1,7 @@
 use crate::*;
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
-pub struct Model {
+pub struct Model {pub doc_comment: Option<String>,
     pub name:    String,
     pub fields:  Vec<Field>,
 
@@ -11,7 +11,7 @@ pub struct Model {
     pub indexes: Vec<Vec<String>>,
 } impl Parse for Model {
     fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
-        let mut M = Self {
+        let mut M = Self {doc_comment: ts.pop_doc_comment(),
             name:    String::new(),
             fields:  Vec::new(),
             map:     None,
@@ -71,7 +71,7 @@ pub struct Model {
                         other => return Err(ts.current.Msg(f!("Expected one of `map`, `id`, `unique`, `index` but found `{other}`")))
                     }
                 }
-                Token::Ident(_) => {
+                Token::Ident(_) | Token::DocComment(_) => {
                     M.fields.push(Field::parse(ts)?)
                 }
                 other => return Err(loc.Msg(f!("Expected an identifier or `@@` but found `{other}`")))
@@ -84,15 +84,24 @@ pub struct Model {
 }
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
-pub struct Field {
+pub struct Field {pub doc_comment: Option<String>,
     pub name:      String,
     pub schema:    FieldSchema,
 } impl Parse for Field {
     fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
-        Ok(Self {
-            name:   ts.try_pop_ident()?,
-            schema: FieldSchema::parse(ts)?,
-        })
+        let leading_comment = ts.pop_doc_comment();
+        let name = ts.try_pop_ident()?;
+        let schema = FieldSchema::parse(ts)?;
+        let trailing_comment = ts.pop_doc_comment_on_current_line();
+
+        let doc_comment = match (leading_comment, trailing_comment) {
+            (Some(l), Some(t)) => Some(f!("{l}\n\n{t}")),
+            (Some(l), None   ) => Some(l),
+            (None,    Some(t)) => Some(t),
+            (None,    None   ) => None,
+        };
+
+        Ok(Self {doc_comment, name, schema })
     }
 }
 
