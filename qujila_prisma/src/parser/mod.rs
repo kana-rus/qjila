@@ -4,8 +4,8 @@ mod tokenizer;
 #[cfg(test)] mod reader_test;
 #[cfg(test)] mod tokenizer_test;
 
-pub(crate) use reader::*;
 pub use tokenizer::*;
+#[allow(unused)] pub(crate) use reader::*;
 
 
 pub trait Parse: Sized {
