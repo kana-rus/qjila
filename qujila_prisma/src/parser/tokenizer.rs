@@ -111,18 +111,20 @@ impl TokenStream {
         }
     }
 
-    pub fn try_consume(&mut self, expected: Token) -> Result<(), Cow<'static, str>> {
+    pub fn try_consume(&mut self, expected: Token) -> Result<Location, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
+        let loc = loc.clone();
         if t == &expected {
-            self.pop_unchecked(); Ok(())
+            self.pop_unchecked(); Ok(loc)
         } else {
             Err(loc.Msg(f!("Expected `{expected}` but found `{t}`")))
         }
     }
-    pub fn try_consume_ident(&mut self, expected_ident: impl AsRef<str>) -> Result<(), Cow<'static, str>> {
+    pub fn try_consume_ident(&mut self, expected_ident: impl AsRef<str>) -> Result<Location, Cow<'static, str>> {
         let (loc, t) = self.try_peek()?;
+        let loc = loc.clone();
         match t {
-            Token::Ident(ident) if &**ident == expected_ident.as_ref() => {self.pop_unchecked(); Ok(())},
+            Token::Ident(ident) if &**ident == expected_ident.as_ref() => {self.pop_unchecked(); Ok(loc)},
             another => Err(loc.Msg(f!("Expected an identifier `{}` but found `{another}`", expected_ident.as_ref())))
         }
     }
@@ -223,7 +225,7 @@ pub fn tokenize_file(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
     tokenize(Reader::file(file)?)
 }
 
-pub(super) fn tokenize(mut r: Reader) -> Result<TokenStream, Cow<'static, str>> {
+pub(crate) fn tokenize(mut r: Reader) -> Result<TokenStream, Cow<'static, str>> {
     let mut tokens = Vec::new();
     loop {
         r.skip_whitespace();
