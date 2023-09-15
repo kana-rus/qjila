@@ -2,3 +2,7 @@
 members = [
     "qujila_prisma",
 ]
+
+[workspace.dependencies]
+sqlx         = { version = "0.6", default_features = false }
+chrono       = { version = "0.4", default_features = false, features = ["clock", "std"] }

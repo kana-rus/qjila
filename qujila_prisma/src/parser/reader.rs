@@ -61,19 +61,29 @@ impl Reader {
 
         &self.content[start_idx..(start_idx + add_idx)]
     }
+    pub fn read_while(&mut self, condition: impl Fn(&u8)->bool) -> String {
+        let mut read_bytes = Vec::new();
+        while let Some(b) = self.pop_if(|_b| condition(_b)) {
+            read_bytes.push(b)
+        }
+        unsafe {String::from_utf8_unchecked(read_bytes)}
+    }
     #[inline] pub fn consume(&mut self, max_bytes: usize) {
         let _ = self.read(max_bytes);
     }
     #[inline] pub fn pop_if(&mut self, condition: impl Fn(&u8)->bool) -> Option<u8> {
-        let value = self.peek()?;
-        condition(value).then_some(*value)
+        let value = self.peek()?.clone();
+        if condition(&value) {self.consume(1); Some(value)} else {None}
     }
 
     #[inline] pub fn peek(&self) -> Option<&u8> {
-        self.remained().first()
+        self.remained().get(0)
     }
     #[inline] pub fn peek2(&self) -> Option<&u8> {
         self.remained().get(1)
+    }
+    #[inline] pub fn peek3(&self) -> Option<&u8> {
+        self.remained().get(2)
     }
 
     pub fn skip_whitespace(&mut self) {

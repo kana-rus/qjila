@@ -170,6 +170,8 @@ pub enum Token {
     BraceClose,
     BracketOpen,
     BracketClose,
+
+    DocComment(String),
 } impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -198,6 +200,8 @@ pub enum Token {
             Token::BraceClose   => f.write_str("}"),
             Token::BracketOpen  => f.write_str("["),
             Token::BracketClose => f.write_str("]"),
+
+            Token::DocComment(comment) => f.write_str(&f!("comment(( {comment} ))"))
         }
     }
 }
@@ -251,6 +255,21 @@ pub(crate) fn tokenize(mut r: Reader) -> Result<TokenStream, Cow<'static, str>> 
                 None       => {r.consume(1); push(Token::At); return Ok(TokenStream::new(tokens))}
                 Some(b'@') => {r.consume(2); push(Token::At2)}
                 Some(_)    => {r.consume(1); push(Token::At)}
+            }
+
+            b'/' => match (r.peek2(), r.peek3()) {
+                (Some(b'/'), Some(b'/')) => {
+                    r.consume(3); r.read_while(|b| b == &b' ');
+
+                    let doc_comment = r.read_while(|b| b != &b'\n');
+                    push(Token::DocComment(doc_comment))
+                }
+                (Some(b'/'), _) => {
+                    r.consume(2); r.read_while(|b| b == &b' ');
+                    
+                    r.read_while(|b| b != &b'\n');
+                }
+                (_, _) => return Err(Cow::Owned(f!("{location} Crazy `/`")))
             }
 
             b'e' | b'm' | b'g' | b'd' => match r.parse_oneof_keywords(["enum", "model", "generator", "datasource"]) {
