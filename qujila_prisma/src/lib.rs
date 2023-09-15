@@ -6,6 +6,7 @@ mod generator_client;
 mod datasource;
 mod function;
 mod model;
+#[cfg(test)] mod model_test;
 
 use generator_client::GeneratorClient;
 use datasource::DataSource;

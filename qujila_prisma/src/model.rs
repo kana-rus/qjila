@@ -1,6 +1,6 @@
 use crate::*;
 
-
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct Model {
     pub name:    String,
     pub fields:  Vec<Field>,
@@ -32,16 +32,41 @@ pub struct Model {
                 Token::At2 => {ts.pop();
                     match &*ts.try_pop_ident()? {
                         "map" => {
-                            todo!()
+                            ts.try_consume(Token::ParenOpen)?;
+                            let map_to = ts.try_pop_string_literal()?;
+                            if M.map.as_ref().is_some_and(|m| m == &map_to) {
+                                return Err(ts.current.Msg("Duplicate declaring `map`"))
+                            }
+                            ts.try_consume(Token::ParenClose)?;
+
+                            M.map = Some(map_to)
                         }
                         "id" => {
-                            todo!()
+                            ts.try_consume(Token::ParenOpen)?;
+                            ts.try_consume(Token::BracketOpen)?;
+                            let id = ts.parse_csv(TokenStream::try_pop_ident)?;
+                            ts.try_consume(Token::BracketClose)?;
+                            ts.try_consume(Token::ParenClose)?;
+
+                            M.ids.push(id)
                         }
                         "unique" => {
-                            todo!()
+                            ts.try_consume(Token::ParenOpen)?;
+                            ts.try_consume(Token::BracketOpen)?;
+                            let unique = ts.parse_csv(TokenStream::try_pop_ident)?;
+                            ts.try_consume(Token::BracketClose)?;
+                            ts.try_consume(Token::ParenClose)?;
+
+                            M.uniques.push(unique)
                         }
                         "index" => {
-                            todo!()
+                            ts.try_consume(Token::ParenOpen)?;
+                            ts.try_consume(Token::BracketOpen)?;
+                            let index = ts.parse_csv(TokenStream::try_pop_ident)?;
+                            ts.try_consume(Token::BracketClose)?;
+                            ts.try_consume(Token::ParenClose)?;
+
+                            M.indexes.push(index)
                         }
                         other => return Err(ts.current.Msg(f!("Expected one of `map`, `id`, `unique`, `index` but found `{other}`")))
                     }
@@ -52,12 +77,13 @@ pub struct Model {
                 other => return Err(loc.Msg(f!("Expected an identifier or `@@` but found `{other}`")))
             }
         }
-        ts.try_consume(Token::BraceOpen)?;
+        ts.try_consume(Token::BraceClose)?;
 
         Ok(M)
     }
 }
 
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct Field {
     pub name:      String,
     pub schema:    FieldSchema,
@@ -70,6 +96,7 @@ pub struct Field {
     }
 }
 
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum FieldSchema {
     String         (Attributes<StringValue>),
     StringOptional (Attributes<StringValue>),
@@ -108,6 +135,7 @@ pub enum FieldSchema {
     ModelOptional   { model_name: String, relation: Option<Relation> },
 }
 
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct Attributes<T: Parse + PartialEq> {
     pub id:        bool,
     pub unique:    bool,
@@ -155,6 +183,7 @@ pub struct Attributes<T: Parse + PartialEq> {
 }
 
 #[derive(PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum StringValue {
     literal(String),
     cuid,
@@ -177,6 +206,7 @@ pub enum StringValue {
 }
 
 #[derive(PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum BooleanValue {
     literal(bool)
 } impl Parse for BooleanValue {
@@ -188,6 +218,7 @@ pub enum BooleanValue {
 }
 
 #[derive(PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum IntValue {
     literal(i32),
     autoincrement,
@@ -210,6 +241,7 @@ pub enum IntValue {
 }
 
 #[derive(PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum BigIntValue {
     literal(i64),
     autoincrement,
@@ -232,6 +264,7 @@ pub enum BigIntValue {
 }
 
 #[derive(PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum FloatValue {
     literal(f64)
 } impl Parse for FloatValue {
@@ -243,6 +276,7 @@ pub enum FloatValue {
 }
 
 #[derive(PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum DecimalValue {
     literal(f64)
 } impl Parse for DecimalValue {
@@ -254,6 +288,7 @@ pub enum DecimalValue {
 }
 
 #[derive(PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum DateTimeValue {
     now,
     updatedAt,
@@ -271,6 +306,7 @@ pub enum DateTimeValue {
 }
 
 #[derive(PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum BytesValue {
     literal(String)
 } impl Parse for BytesValue {
@@ -281,6 +317,7 @@ pub enum BytesValue {
     }
 }
 
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct Relation {
     pub fields:     Vec<String>,
     pub references: Vec<String>,

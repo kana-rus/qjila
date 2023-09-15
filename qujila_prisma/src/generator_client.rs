@@ -1,5 +1,7 @@
 use crate::*;
 
+
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct GeneratorClient {
     pub provider: String,
     pub output:   Option<String>,
@@ -38,5 +40,42 @@ impl Parse for GeneratorClient {
             provider: provider.ok_or_else(|| Cow::Borrowed("No `provider` found in `generator`"))?,
             output
         })
+    }
+}
+
+
+
+
+#[cfg(test)] mod test {
+    use super::*;
+    fn bytes(s: &str) -> Vec<u8> {
+        s.trim().to_string().into_bytes()
+    }
+
+    #[test] fn test_parse_generator_client() {
+        let input = bytes(r#"
+generator client {
+  provider = "qujila"
+}
+        "#); assert_eq!(
+            GeneratorClient::parse(&mut tokenize(Reader::new(input).unwrap()).unwrap()).unwrap(),
+            GeneratorClient {
+                provider: f!("qujila"),
+                output:   None,
+            }
+        );
+
+        let input = bytes(r#"
+generator client {
+  provider = "qujila"
+  output   = "../src/qujila"
+}
+        "#); assert_eq!(
+            GeneratorClient::parse(&mut tokenize(Reader::new(input).unwrap()).unwrap()).unwrap(),
+            GeneratorClient {
+                provider: f!("qujila"),
+                output:   Some(f!("../src/qujila")),
+            }
+        );
     }
 }
