@@ -6,10 +6,8 @@ authors       = ["kanarus <kanarus786@gmail.com>"]
 documentation = "https://docs.rs/qujila_lib"
 homepage      = "https://crates.io/crates/qujila_lib"
 repository    = "https://github.com/kana-rus/qujila_lib"
-readme        = "README.md"
+readme        = "../README.md"
 license       = "MIT"
-description   = ""
-keywords      = []
-categories    = []
-
-[dependencies]
+description   = "Common utilities for qujila DB library"
+keywords      = ["database", "async", "postgres", "mysql", "sqlite"]
+categories    = ["database", "asynchronous"]
