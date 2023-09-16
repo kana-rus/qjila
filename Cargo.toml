@@ -1,19 +1,10 @@
 [workspace]
 members = [
     "qujila_lib",
+    "qujila_orm",
     "qujila_prisma",
 ]
 
 [workspace.dependencies]
 sqlx         = { version = "0.6", default_features = false }
 chrono       = { version = "0.4", default_features = false, features = ["clock", "std"] }
-
-# [features]
-# rt_tokio     = ["sqlx/runtime-tokio-native-tls"]
-# rt_async-std = ["sqlx/runtime-async-std-native-tls"]
-# db_postgres  = ["sqlx/postgres"]
-# db_mysql     = ["sqlx/mysql"]
-# db_sqlite    = ["sqlx/sqlite"]
-# 
-# ## DEBUG
-# default = ["rt_tokio", "db_postgres"]

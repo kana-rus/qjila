@@ -56,7 +56,7 @@ impl Parse for Schema {
 
 impl Schema {
     pub fn parse() -> Result<Self, std::borrow::Cow<'static, str>> {
-        let schema_file_path = qujila_lib::fs::find_target_schema_file()?;
+        let schema_file_path = qujila_lib::fs::schema_file()?;
 
         <Schema as parser::Parse>::parse(
             &mut tokenize_file(schema_file_path)?

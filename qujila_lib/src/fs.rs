@@ -7,19 +7,25 @@ use std::{
 };
 
 
-pub fn find_target_schema_file() -> Result</*absolute*/PathBuf, Cow<'static, str>> {
-    let qujila_dir = read_dir(&find_project_root()?)?
-        .find(|f| f.is_dir() && &f.file_name().unwrap().to_string_lossy() == "qujila")
-        .ok_or_else(|| Cow::Borrowed("No qujila directory found"))?;
-
-    let schema_prisma = read_dir(&qujila_dir)?
+pub fn schema_file() -> Result</*absolute*/PathBuf, Cow<'static, str>> {
+    read_dir(&qujila_dir()?)?
         .find(|f| f.is_file() && &f.file_name().unwrap().to_string_lossy() == "schema.prisma")
-        .ok_or_else(|| Cow::Borrowed("`qujila/schema.prisma` was not found"))?;
-
-    Ok(schema_prisma)
+        .ok_or_else(|| Cow::Borrowed("`qujila/schema.prisma` was not found"))
 }
 
-pub fn find_project_root() -> Result</*absolute*/PathBuf, Cow<'static, str>> {
+pub fn migration_dir() -> Result</*absolute*/PathBuf, Cow<'static, str>> {
+    read_dir(&qujila_dir()?)?
+        .find(|f| f.is_dir() && &f.file_name().unwrap().to_string_lossy() == "migrations")
+        .ok_or_else(|| Cow::Borrowed("`qujila/` was not found"))
+}
+
+pub fn qujila_dir() -> Result</*absolute*/PathBuf, Cow<'static, str>> {
+    read_dir(&project_root()?)?
+        .find(|f| f.is_dir() && &f.file_name().unwrap().to_string_lossy() == "qujila")
+        .ok_or_else(|| Cow::Borrowed("No qujila directory found"))
+}
+
+pub fn project_root() -> Result</*absolute*/PathBuf, Cow<'static, str>> {
     let mut cd = env::current_dir().map_err(|e| Cow::Owned(f!("Can't get current directory: {e}")))?;
     loop {
         if read_dir(&cd)?.any(|f| f.is_file() && &f.file_name().unwrap().to_string_lossy() == "Cargo.toml") {

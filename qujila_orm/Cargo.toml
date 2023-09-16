@@ -1,0 +1,28 @@
+[package]
+name          = "qujila_orm"
+version       = "0.1.0"
+edition       = "2021"
+authors       = ["kanarus <kanarus786@gmail.com>"]
+documentation = "https://docs.rs/qujila_orm"
+homepage      = "https://crates.io/crates/qujila_orm"
+repository    = "https://github.com/kana-rus/qujila_orm"
+readme        = "../README.md"
+license       = "MIT"
+description   = "ORM generator for qujila DB library"
+keywords      = ["database", "async", "postgres", "mysql", "sqlite"]
+categories    = ["database", "asynchronous"]
+
+[dependencies]
+qujila_lib    = { version = "0.1.0", path = "../qujila_lib" }
+qujila_prisma = { version = "0.1.0", path = "../qujila_prisma" }
+sqlx          = { workspace = true }
+
+[features]
+rt_tokio      = ["sqlx/runtime-tokio-native-tls"]
+rt_async-std  = ["sqlx/runtime-async-std-native-tls"]
+db_postgres   = ["sqlx/postgres"]
+db_mysql      = ["sqlx/mysql"]
+db_sqlite     = ["sqlx/sqlite"]
+
+## DEBUG
+default = ["rt_tokio", "db_postgres"]
