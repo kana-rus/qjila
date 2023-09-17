@@ -13,8 +13,13 @@ use datasource::DataSource;
 use function::Function;
 use model::Model;
 
-use std::{borrow::Cow, format as f};
+use std::{borrow::Cow, path::PathBuf, format as f};
 use parser::*;
+
+
+pub mod db_type {
+    pub use super::model::*;
+}
 
 
 pub struct Schema {
@@ -55,9 +60,7 @@ impl Parse for Schema {
 }
 
 impl Schema {
-    pub fn parse() -> Result<Self, std::borrow::Cow<'static, str>> {
-        let schema_file_path = qujila_lib::fs::schema_file()?;
-
+    pub fn parse(schema_file_path: PathBuf) -> Result<Self, std::borrow::Cow<'static, str>> {
         <Schema as parser::Parse>::parse(
             &mut tokenize_file(schema_file_path)?
         )
