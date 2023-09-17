@@ -17,7 +17,7 @@ use std::{borrow::Cow, path::PathBuf, format as f};
 use parser::*;
 
 
-pub mod db_type {
+pub mod items {
     pub use super::model::*;
 }
 

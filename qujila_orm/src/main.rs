@@ -1,4 +1,5 @@
 mod generater;
+mod type_mapper;
 
 use generater::generate_orm;
 

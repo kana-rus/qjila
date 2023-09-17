@@ -127,10 +127,6 @@ pub enum FieldSchema {
     FloatOptional   (Attributes<FloatValue>),
     FloatList       (Attributes<Vec<FloatValue>>),
 
-    Decimal         (Attributes<DecimalValue>),
-    DecimalOptional (Attributes<DecimalValue>),
-    DecimalList     (Attributes<Vec<DecimalValue>>),
-
     DateTime        (Attributes<DateTimeValue>),
     DateTimeList    (Attributes<Vec<DateTimeValue>>),
     DateTimeOptional(Attributes<DateTimeValue>),
@@ -286,18 +282,6 @@ pub enum FloatValue {
 
 #[derive(PartialEq)]
 #[cfg_attr(test, derive(Debug))]
-pub enum DecimalValue {
-    literal(f64)
-} impl Parse for DecimalValue {
-    fn parse(ts: &mut TokenStream) -> Result<Self, std::borrow::Cow<'static, str>> {
-        Ok(Self::literal(
-            ts.try_pop_decimal_literal()?
-        ))
-    }
-}
-
-#[derive(PartialEq)]
-#[cfg_attr(test, derive(Debug))]
 pub enum DateTimeValue {
     now,
     updatedAt,
@@ -428,18 +412,6 @@ impl Parse for FieldSchema {
                     Ok(Self::FloatOptional(Attributes::parse(ts)?))
                 }
                 _ => Ok(Self::Float(Attributes::parse(ts)?))
-            }
-            "Decimal" => match &ts.try_peek()?.1 {
-                Token::BracketOpen => {
-                    ts.try_consume(Token::BracketOpen)?;
-                    ts.try_consume(Token::BracketClose)?;
-                    Ok(Self::DecimalList(Attributes::parse(ts)?))
-                }
-                Token::Question => {
-                    ts.try_consume(Token::Question)?;
-                    Ok(Self::DecimalOptional(Attributes::parse(ts)?))
-                }
-                _ => Ok(Self::Decimal(Attributes::parse(ts)?))
             }
             "DateTime" => match &ts.try_peek()?.1 {
                 Token::BracketOpen => {
