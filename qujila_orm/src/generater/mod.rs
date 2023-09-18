@@ -36,13 +36,19 @@ fn into_orm(Model {
     let doc = doc_comment.unwrap_or(f!(""))
         .lines().map(|line| f!("/// {line}\n")).collect::<String>();
 
-    let mut struct_def = f!("{doc}struct {name}");
-
+    let mut struct_def = f!("{doc}pub struct {name}");
     struct_def.push('{');
     for field in fields {
         TODO
     }
     struct_def.push('}');
 
-    struct_def
+    let mut impls = f!("impl {name}");
+    impls.push('{');
+    {
+
+    }
+    impls.push('}');
+
+    f!("{struct_def}{impls}")
 }
