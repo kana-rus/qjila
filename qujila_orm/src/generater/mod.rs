@@ -34,12 +34,11 @@ fn into_orm(Model {
     ..
 }: Model) -> String {
     let doc = doc_comment.unwrap_or(f!(""))
-    .lines().map(|line| f!("/// {line}\n")).collect::<String>();
+        .lines().map(|line| f!("/// {line}\n")).collect::<String>();
 
     let mut struct_def = f!("{doc}struct {name} ");
 
     struct_def.push('{');
-    struct_def.push('\n');
     for field in fields {
         TODO
     }
