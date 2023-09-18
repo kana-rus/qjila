@@ -26,7 +26,6 @@ pub fn generate_orm(model: Model, output_dir: &Path) -> Result<(), Cow<'static, 
     Ok(())
 }
 
-#[doc = "# This is\ndoc"]
 fn into_orm(Model {
     doc_comment,
     name,
