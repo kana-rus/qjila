@@ -1,23 +1,27 @@
 use qujila_prisma::items::{Model, Field};
+use qujila_lib::case::{snake_cased};
 
 use std::{
     format as f,
     fs,
     path::Path,
-    borrow::Cow, io::Write,
+    borrow::Cow, io::Write, process::Command,
 };
 
 
 pub fn generate_orm(model: Model, output_dir: &Path) -> Result<(), Cow<'static, str>> {
-    let mut output_file = fs::File::create(
-        output_dir.join(f!("{}.rs", (&*model.name).to_lowercase()))
-    ).map_err(|e| Cow::Owned(f!("Failed to open file: {e}")))?;
+    let output_file_path = output_dir.join(f!("{}.rs", snake_cased(&model.name)));
 
-    output_file.write_all(
-        into_orm(model).as_bytes()
-    ).map_err(|e| Cow::Owned(f!("Failed to write client code: {e}")))?;
+    let mut output_file = fs::File::create(&output_file_path)
+        .map_err(|e| Cow::Owned(f!("Failed to open file: {e}")))?;
 
+    output_file.write_all(into_orm(model).as_bytes())
+        .map_err(|e| Cow::Owned(f!("Failed to write client code: {e}")))?;
 
+    Command::new("rustfmt")
+        .arg(output_file_path)
+        .spawn()
+        .map_err(|e| Cow::Owned(f!("Failed to format client code: {e}")))?;
 
     Ok(())
 }
