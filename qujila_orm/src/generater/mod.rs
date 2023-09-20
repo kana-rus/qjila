@@ -1,11 +1,15 @@
-use qujila_prisma::items::{Model, Field};
+use super::type_mapper::*;
+
+use qujila_prisma::items::{Model};
 use qujila_lib::case::{snake_cased};
 
 use std::{
     format as f,
     fs,
+    io::Write,
     path::Path,
-    borrow::Cow, io::Write, process::Command,
+    borrow::Cow,
+    process::Command,
 };
 
 
@@ -38,7 +42,11 @@ fn into_orm(Model {
     let mut struct_def = f!("{doc}pub struct {name}");
     struct_def.push('{');
     for field in fields {
-        TODO
+        let _name_ = &*field.name;
+        let _type_ = &*rust_type_name(&field);
+        struct_def.push_str(&f!(
+            "pub {_name_}: {_type_},"
+        ))
     }
     struct_def.push('}');
 

@@ -1,3 +1,5 @@
+use std::{borrow::Cow, format as f};
+
 use qujila_prisma::items::{FieldSchema, Field};
 
 
@@ -37,36 +39,38 @@ pub fn db_type_name(field: &Field) -> &'static str {
     }
 }
 
-pub fn rust_type_name(field: &Field) -> &'static str {
+pub fn rust_type_name(field: &Field) -> Cow<'_, str> {
     match &field.schema {
-        FieldSchema::String(_)           => "String",
-        FieldSchema::StringList(_)       => "Vec<String>",
-        FieldSchema::StringOptional(_)   => "Option<String>",
+        FieldSchema::String(_)           => Cow::Borrowed("String"),
+        FieldSchema::StringList(_)       => Cow::Borrowed("Vec<String>"),
+        FieldSchema::StringOptional(_)   => Cow::Borrowed("Option<String>"),
 
-        FieldSchema::Boolean(_)          => "bool",
-        FieldSchema::BooleanList(_)      => "Vec<bool>",
-        FieldSchema::BooleanOptional(_)  => "Option<bool>",
+        FieldSchema::Boolean(_)          => Cow::Borrowed("bool"),
+        FieldSchema::BooleanList(_)      => Cow::Borrowed("Vec<bool>"),
+        FieldSchema::BooleanOptional(_)  => Cow::Borrowed("Option<bool>"),
 
-        FieldSchema::Int(_)              => "i32",
-        FieldSchema::IntList(_)          => "Vec<i32>",
-        FieldSchema::IntOptional(_)      => "Option<i32>",
+        FieldSchema::Int(_)              => Cow::Borrowed("i32"),
+        FieldSchema::IntList(_)          => Cow::Borrowed("Vec<i32>"),
+        FieldSchema::IntOptional(_)      => Cow::Borrowed("Option<i32>"),
 
-        FieldSchema::BigInt(_)           => "i64",
-        FieldSchema::BigIntList(_)       => "Vec<i64>",
-        FieldSchema::BigIntOptional(_)   => "Option<i64>",
+        FieldSchema::BigInt(_)           => Cow::Borrowed("i64"),
+        FieldSchema::BigIntList(_)       => Cow::Borrowed("Vec<i64>"),
+        FieldSchema::BigIntOptional(_)   => Cow::Borrowed("Option<i64>"),
 
-        FieldSchema::Float(_)            => "f64",
-        FieldSchema::FloatList(_)        => "Vec<f64>",
-        FieldSchema::FloatOptional(_)    => "Option<f64>",
+        FieldSchema::Float(_)            => Cow::Borrowed("f64"),
+        FieldSchema::FloatList(_)        => Cow::Borrowed("Vec<f64>"),
+        FieldSchema::FloatOptional(_)    => Cow::Borrowed("Option<f64>"),
 
-        FieldSchema::DateTime(_)         => "::chrono::NaiveDateTime",
-        FieldSchema::DateTimeList(_)     => "Vec<::chrono::NaiveDateTime>",
-        FieldSchema::DateTimeOptional(_) => "Option<::chrono::NaiveDateTime>",
+        FieldSchema::DateTime(_)         => Cow::Borrowed("::chrono::NaiveDateTime"),
+        FieldSchema::DateTimeList(_)     => Cow::Borrowed("Vec<::chrono::NaiveDateTime>"),
+        FieldSchema::DateTimeOptional(_) => Cow::Borrowed("Option<::chrono::NaiveDateTime>"),
 
-        FieldSchema::Bytes(_)            => "Vec<u8>",
-        FieldSchema::BytesList(_)        => "Vec<Vec<u8>>",
-        FieldSchema::BytesOptional(_)    => "Option<Vec<u8>>",
+        FieldSchema::Bytes(_)            => Cow::Borrowed("Vec<u8>"),
+        FieldSchema::BytesList(_)        => Cow::Borrowed("Vec<Vec<u8>>"),
+        FieldSchema::BytesOptional(_)    => Cow::Borrowed("Option<Vec<u8>>"),
 
-        FieldSchema::Model{..} | FieldSchema::ModelList{..} | FieldSchema::ModelOptional{..} => unreachable!()
+        FieldSchema::Model{ model_name, .. }         => Cow::Borrowed(model_name),
+        FieldSchema::ModelList{ model_name, .. }     => Cow::Owned(f!("Vec<{model_name}>")),
+        FieldSchema::ModelOptional{ model_name, .. } => Cow::Owned(f!("Option<{model_name}>")),
     }
 }

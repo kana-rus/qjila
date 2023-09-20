@@ -138,6 +138,13 @@ pub enum FieldSchema {
     Model           { model_name: String, relation: Option<Relation> },
     ModelList       { model_name: String, relation: Option<Relation> },
     ModelOptional   { model_name: String, relation: Option<Relation> },
+} impl FieldSchema {
+    pub fn is_model(&self) -> bool {
+        match self {
+            Self::Model {..} | Self::ModelList {..} | Self::ModelOptional {..} => true,
+            _ => false
+        }
+    }
 }
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
