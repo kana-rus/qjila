@@ -30,18 +30,15 @@ pub fn generate_orm(model: Model, output_dir: &Path) -> Result<(), Cow<'static, 
     Ok(())
 }
 
-fn into_orm(Model {
-    doc_comment,
-    name,
-    fields,
-    ..
-}: Model) -> String {
-    let doc = doc_comment.unwrap_or(f!(""))
-        .lines().map(|line| f!("/// {line}\n")).collect::<String>();
-
-    let mut struct_def = f!("{doc}pub struct {name}");
+fn into_orm(model: Model) -> String {
+    let mut struct_def = f!(
+        "{}pub struct {}",
+        (&model.doc_comment).as_deref().unwrap_or("")
+            .lines().map(|line| f!("/// {line}\n")).collect::<String>(),
+        &model.name
+    );
     struct_def.push('{');
-    for field in fields {
+    for field in &model.fields {
         let _name_ = &*field.name;
         let _type_ = &*rust_type_name(&field);
         struct_def.push_str(&f!(
@@ -50,12 +47,14 @@ fn into_orm(Model {
     }
     struct_def.push('}');
 
-    let mut impls = f!("impl {name}");
-    impls.push('{');
-    {
+    f!("{struct_def}{}", [
+        create_impl(&model),
+    ].concat())
+}
 
-    }
-    impls.push('}');
 
-    f!("{struct_def}{impls}")
+
+
+fn create_impl(model: &Model) -> String {
+    todo!()
 }
