@@ -1,4 +1,4 @@
-use super::reader::{Reader};
+use byte_reader::Reader;
 use std::{
     path::PathBuf,
     borrow::Cow,
@@ -248,75 +248,76 @@ pub enum Keyword {
 
 
 pub fn tokenize_file(file: PathBuf) -> Result<TokenStream, Cow<'static, str>> {
-    tokenize(Reader::file(file)?)
+    let content = std::fs::read(&file).map_err(|e| Cow::Owned(f!("Failed to read file `{}`: {e}", file.display())))?;
+    tokenize(Reader::new(content))
 }
 
-pub(crate) fn tokenize(mut r: Reader) -> Result<TokenStream, Cow<'static, str>> {
+pub(crate) fn tokenize(mut r: Reader<Vec<u8>>) -> Result<TokenStream, Cow<'static, str>> {
     let mut tokens = Vec::new();
     loop {
         r.skip_whitespace();
 
-        let location = Location { line: r.line(), column: r.column()};
+        let location = Location { line: r.line(), column: r.column() };
         let mut push = |token: Token| tokens.push((location, token));
         
         let Some(b) = r.peek() else {return Ok(TokenStream::new(tokens))};
         match b {
-            b'=' => {r.consume(1); push(Token::Eq)}
-            b'.' => {r.consume(1); push(Token::Dot)}
-            b':' => {r.consume(1); push(Token::Colon)}
-            b',' => {r.consume(1); push(Token::Comma)}
-            b'?' => {r.consume(1); push(Token::Question)}
-            b'(' => {r.consume(1); push(Token::ParenOpen)}
-            b')' => {r.consume(1); push(Token::ParenClose)}
-            b'{' => {r.consume(1); push(Token::BraceOpen)}
-            b'}' => {r.consume(1); push(Token::BraceClose)}
-            b'[' => {r.consume(1); push(Token::BracketOpen)}
-            b']' => {r.consume(1); push(Token::BracketClose)}
+            b'=' => {r.advance_by(1); push(Token::Eq)}
+            b'.' => {r.advance_by(1); push(Token::Dot)}
+            b':' => {r.advance_by(1); push(Token::Colon)}
+            b',' => {r.advance_by(1); push(Token::Comma)}
+            b'?' => {r.advance_by(1); push(Token::Question)}
+            b'(' => {r.advance_by(1); push(Token::ParenOpen)}
+            b')' => {r.advance_by(1); push(Token::ParenClose)}
+            b'{' => {r.advance_by(1); push(Token::BraceOpen)}
+            b'}' => {r.advance_by(1); push(Token::BraceClose)}
+            b'[' => {r.advance_by(1); push(Token::BracketOpen)}
+            b']' => {r.advance_by(1); push(Token::BracketClose)}
 
             b'@' => match r.peek2() {
-                None       => {r.consume(1); push(Token::At); return Ok(TokenStream::new(tokens))}
-                Some(b'@') => {r.consume(2); push(Token::At2)}
-                Some(_)    => {r.consume(1); push(Token::At)}
+                None       => {r.advance_by(1); push(Token::At); return Ok(TokenStream::new(tokens))}
+                Some(b'@') => {r.advance_by(2); push(Token::At2)}
+                Some(_)    => {r.advance_by(1); push(Token::At)}
             }
 
             b'/' => match (r.peek2(), r.peek3()) {
                 (Some(b'/'), Some(b'/')) => {
-                    r.consume(3); r.read_while(|b| b == &b' ');
+                    r.advance_by(3); r.read_while(|b| b == &b' ');
 
-                    let mut doc_comment = r.read_while(|b| b != &b'\n');
+                    let mut doc_comment = String::from_utf8_lossy(r.read_while(|b| b != &b'\n')).into_owned();
                     while doc_comment.ends_with(' ') {doc_comment.pop();}
                     push(Token::DocComment(doc_comment))
                 }
                 (Some(b'/'), _) => {
-                    r.consume(2); r.read_while(|b| b == &b' ');
+                    r.advance_by(2); r.read_while(|b| b == &b' ');
                     
                     r.read_while(|b| b != &b'\n');
                 }
                 (_, _) => return Err(Cow::Owned(f!("{location} Crazy `/`")))
             }
 
-            b'e' | b'm' | b'g' | b'd' => match r.parse_oneof_keywords(["enum", "model", "generator", "datasource"]) {
+            b'e' | b'm' | b'g' | b'd' => match r.consume_oneof(["enum", "model", "generator", "datasource"]) {
                 Ok(0)  => push(Token::Keyword(Keyword::_enum)),
                 Ok(1)  => push(Token::Keyword(Keyword::_model)),
                 Ok(2)  => push(Token::Keyword(Keyword::_generator)),
                 Ok(3)  => push(Token::Keyword(Keyword::_datasource)),
                 Ok(_)  => __unreachable__(),
-                Err(_) => push(Token::Ident(r.parse_ident()?)),
+                Err(_) => push(Token::Ident(r.read_snake()?)),
             }
 
-            b'f' | b't' => match r.parse_oneof_keywords(["false", "true"]) {
+            b'f' | b't' => match r.consume_oneof(["false", "true"]) {
                 Ok(0)  => push(Token::Literal(Lit::Bool(false))),
                 Ok(1)  => push(Token::Literal(Lit::Bool(true))),
                 Ok(_)  => __unreachable__(),
-                Err(_) => push(Token::Ident(r.parse_ident()?)),
+                Err(_) => push(Token::Ident(r.read_snake()?)),
             }
             b'"' => {
-                let literal = r.parse_string_literal()?;
+                let literal = r.read_string()?;
                 push(Token::Literal(Lit::Str(literal)))
             }
-            b'0'..=b'9' => {
-                let integer = r.parse_integer_literal()?;
-                if r.parse_keyword(".").is_err() {
+            b'-' | b'0'..=b'9' => {
+                let integer = r.read_int()? as i128;
+                if r.consume(".").is_err() {
                     push(Token::Literal(Lit::Integer(integer)));
                     continue
                 }
@@ -324,19 +325,19 @@ pub(crate) fn tokenize(mut r: Reader) -> Result<TokenStream, Cow<'static, str>> 
                 let (not_negative, mut abs) = (integer >= 0, integer.abs() as f64);
 
                 let mut min_degit = 1.0_f64;
-                while let Some(d) = r.pop_if(|b| b.is_ascii_digit()) {
+                while let Some(d) = r.next_if(|b| b.is_ascii_digit()) {
                     min_degit /= 10.0;
                     abs += (d as f64) * min_degit
                 }
                 if min_degit == 1.0 {
-                    return Err(Cow::Owned(f!("Unexpectedly end of float literal: `{integer}.`")))
+                    return Err(Cow::Owned(f!("Unexpectedly end of a decimal literal: `{integer}.`")))
                 }
 
                 push(Token::Literal(Lit::Decimal(
                     if not_negative { abs } else { - abs }
                 )))
             }
-            _ => push(Token::Ident(r.parse_ident()?))
+            _ => push(Token::Ident(r.read_snake()?))
         }
     }
 }

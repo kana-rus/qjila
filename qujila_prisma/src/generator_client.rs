@@ -53,6 +53,7 @@ impl Parse for GeneratorClient {
 
 #[cfg(test)] mod test {
     use super::*;
+    use byte_reader::Reader;
     fn bytes(s: &str) -> Vec<u8> {
         s.trim().to_string().into_bytes()
     }
@@ -63,7 +64,7 @@ generator client {
   provider = "qujila"
 }
         "#); assert_eq!(
-            GeneratorClient::parse(&mut tokenize(Reader::new(input).unwrap()).unwrap()).unwrap(),
+            GeneratorClient::parse(&mut tokenize(Reader::new(input)).unwrap()).unwrap(),
             GeneratorClient {
                 doc_comment: None,
                 provider: f!("qujila"),
@@ -82,7 +83,7 @@ generator client {
   output   = "../src/qujila"
 }
         "#); assert_eq!(
-            GeneratorClient::parse(&mut tokenize(Reader::new(input).unwrap()).unwrap()).unwrap(),
+            GeneratorClient::parse(&mut tokenize(Reader::new(input)).unwrap()).unwrap(),
             GeneratorClient {
                 doc_comment: Some(r#"
 Hey, This is generator client for this

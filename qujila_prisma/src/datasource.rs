@@ -81,6 +81,7 @@ pub enum Provider {
 
 #[cfg(test)] mod test {
     use super::*;
+    use byte_reader::Reader;
     fn bytes(s: &str) -> Vec<u8> {
         s.trim().to_string().into_bytes()
     }
@@ -93,7 +94,7 @@ datasource db {
   url      = "MY_DB_URL"
 }
         "#); assert_eq!(
-            DataSource::parse(&mut tokenize(Reader::new(input).unwrap()).unwrap()).unwrap(),
+            DataSource::parse(&mut tokenize(Reader::new(input)).unwrap()).unwrap(),
             DataSource {
                 doc_comment: None,
                 name:     f!("db"),
@@ -108,7 +109,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
         "#); assert_eq!(
-            &*DataSource::parse(&mut tokenize(Reader::new(input).unwrap()).unwrap()).unwrap_err(),
+            &*DataSource::parse(&mut tokenize(Reader::new(input)).unwrap()).unwrap_err(),
             &*f!("[3:14] Failed to fetch environment variable `DATABASE_URL`: {}", std::env::var("DATABASE_URL").unwrap_err())
         );
 
@@ -123,7 +124,7 @@ datasource db {
   url      = "MY_DB_URL"
 }
         "#); assert_eq!(
-            DataSource::parse(&mut tokenize(Reader::new(input).unwrap()).unwrap()).unwrap(),
+            DataSource::parse(&mut tokenize(Reader::new(input)).unwrap()).unwrap(),
             DataSource {
                 doc_comment: Some(r#"
 This defines the datasource.
