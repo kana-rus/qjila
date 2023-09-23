@@ -1,4 +1,5 @@
-use super::{tokenizer::*, reader::*};
+use super::{tokenizer::*};
+use byte_reader::Reader;
 use std::format as f;
 fn bytes(s: &str) -> Vec<u8> {
     s.trim().to_string().into_bytes()
@@ -30,7 +31,7 @@ generator client {
 }
     "#);
 
-    assert_eq!(tokenize(Reader::new(input).unwrap()).unwrap(), TokenStream::new(vec![
+    assert_eq!(tokenize(Reader::new(input)).unwrap(), TokenStream::new(vec![
         (Location { line:1, column:1  }, Token::Keyword(Keyword::_generator)),
         (Location { line:1, column:11 }, Token::Ident(f!("client"))),
         (Location { line:1, column:18 }, Token::BraceOpen),
@@ -55,7 +56,7 @@ datasource db {
 }
     "#);
 
-    assert_eq!(tokenize(Reader::new(input).unwrap()).unwrap(), TokenStream::new(vec![
+    assert_eq!(tokenize(Reader::new(input)).unwrap(), TokenStream::new(vec![
         (Location { line:1, column:1  }, Token::Keyword(Keyword::_datasource)),
         (Location { line:1, column:12 }, Token::Ident(f!("db"))),
         (Location { line:1, column:15 }, Token::BraceOpen),
@@ -81,7 +82,7 @@ model Post {
 }
     "#);
 
-    assert_eq!(tokenize(Reader::new(input).unwrap()).unwrap(), TokenStream::new(vec![
+    assert_eq!(tokenize(Reader::new(input)).unwrap(), TokenStream::new(vec![
         (Location { line:1, column:1  }, Token::Keyword(Keyword::_model)),
         (Location { line:1, column:7  }, Token::Ident(f!("Post"))),
         (Location { line:1, column:12 }, Token::BraceOpen),
@@ -96,7 +97,7 @@ model Post {
 }
     "#);
 
-    assert_eq!(tokenize(Reader::new(input).unwrap()).unwrap(), TokenStream::new(vec![
+    assert_eq!(tokenize(Reader::new(input)).unwrap(), TokenStream::new(vec![
         (Location { line:1, column:1  }, Token::Keyword(Keyword::_model)),
         (Location { line:1, column:7  }, Token::Ident(f!("Post"))),
         (Location { line:1, column:12 }, Token::BraceOpen),

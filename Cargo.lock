@@ -283,6 +283,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3e2c3daef883ecc1b5d58c15adae93470a91d425f3532ba1695849656af3fc1"
 
 [[package]]
+name = "byte_reader"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d51ea76441364414b190cb53e0e3b8eaf787b72b674c502b6e8c81867ba121c3"
+
+[[package]]
 name = "byteorder"
 version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1257,6 +1263,7 @@ dependencies = [
 name = "qujila_prisma"
 version = "0.1.0"
 dependencies = [
+ "byte_reader",
  "qujila_lib",
 ]
 

@@ -1,9 +1,10 @@
 use crate::*;
 use crate::model::*;
+use byte_reader::Reader;
 fn Model(s: &str) -> Result<Model, Cow<'static, str>> {
     Model::parse(&mut tokenize(Reader::new(
         s.trim().to_string().into_bytes()
-    ).unwrap()).unwrap())
+    )).unwrap())
 }
 
 
