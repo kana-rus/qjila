@@ -293,7 +293,7 @@ pub(crate) fn tokenize(mut r: Reader<Vec<u8>>) -> Result<TokenStream, Cow<'stati
                     
                     r.read_while(|b| b != &b'\n');
                 }
-                (_, _) => return Err(Cow::Owned(f!("{location} Crazy `/`")))
+                (_, _) => return Err(location.Msg("Crazy `/`"))
             }
 
             b'e' | b'm' | b'g' | b'd' => match r.consume_oneof(["enum", "model", "generator", "datasource"]) {
@@ -302,21 +302,21 @@ pub(crate) fn tokenize(mut r: Reader<Vec<u8>>) -> Result<TokenStream, Cow<'stati
                 Ok(2)  => push(Token::Keyword(Keyword::_generator)),
                 Ok(3)  => push(Token::Keyword(Keyword::_datasource)),
                 Ok(_)  => __unreachable__(),
-                Err(_) => push(Token::Ident(r.read_snake()?)),
+                Err(_) => push(Token::Ident(r.read_snake().map_err(|e| location.Msg(e))?)),
             }
 
             b'f' | b't' => match r.consume_oneof(["false", "true"]) {
                 Ok(0)  => push(Token::Literal(Lit::Bool(false))),
                 Ok(1)  => push(Token::Literal(Lit::Bool(true))),
                 Ok(_)  => __unreachable__(),
-                Err(_) => push(Token::Ident(r.read_snake()?)),
+                Err(_) => push(Token::Ident(r.read_snake().map_err(|e| location.Msg(e))?)),
             }
             b'"' => {
-                let literal = r.read_string()?;
+                let literal = r.read_string().map_err(|e| location.Msg(e))?;
                 push(Token::Literal(Lit::Str(literal)))
             }
             b'-' | b'0'..=b'9' => {
-                let integer = r.read_int()? as i128;
+                let integer = r.read_int().map_err(|e| location.Msg(e))? as i128;
                 if r.consume(".").is_err() {
                     push(Token::Literal(Lit::Integer(integer)));
                     continue
@@ -337,7 +337,7 @@ pub(crate) fn tokenize(mut r: Reader<Vec<u8>>) -> Result<TokenStream, Cow<'stati
                     if not_negative { abs } else { - abs }
                 )))
             }
-            _ => push(Token::Ident(r.read_snake()?))
+            _ => push(Token::Ident(r.read_snake().map_err(|e| location.Msg(e))?))
         }
     }
 }
